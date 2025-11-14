@@ -11,5 +11,9 @@
       "src": "/(.*)",
       "dest": "/api/index.py"
     }
-  ]
+  ],
+  "env": {
+    "SECRET_KEY": "your-vercel-secret-key-123",
+    "ADMIN_PASS": "admin123"
+  }
 }
