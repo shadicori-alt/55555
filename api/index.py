@@ -1,4 +1,4 @@
 from app import app
 
-def handler(request):
-    return app(request)
+def handler(request, context):
+    return app(request.environ, lambda status, headers: [])
