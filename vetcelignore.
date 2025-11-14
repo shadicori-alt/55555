@@ -1,0 +1,6 @@
+# احتفظ بالملفات المهمة في الذاكرة المؤقتة
+!requirements.txt
+!pyproject.toml
+!poetry.lock
+!api/
+!*.py
