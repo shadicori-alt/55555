@@ -350,25 +350,6 @@ class ResponseManager:
         
         return response
     
-    def process_message(self, message_data):
-        user_name = message_data.get('user_name')
-        message = message_data.get('message')
-        page_id = message_data.get('page_id')
-        
-        # التحقق من رسالة الترحيب
-        if self._is_first_message(message_data.get('user_id'), page_id):
-            welcome_msg = self._get_welcome_message(page_id)
-            if welcome_msg:
-                return welcome_msg
-        
-        variables = {
-            'name': user_name,
-            'page_name': self._get_page_name(page_id)
-        }
-        
-        response = self.ai.generate_response(message, '', variables)
-        return response
-    
     def _get_post_reply_template(self, post_id):
         # جلب قالب الرد من قاعدة البيانات
         from db import sqlite3
@@ -523,7 +504,66 @@ class EgyptianKnowledgeBase:
                 'الاسعار': 'من 50 إلى 300 جنيه',
                 'الانواع': 'ساعات، نظارات، حقائب، مجوهرات',
                 'توصيل': '2-3 أيام لجميع المحافظات'
-    class WhatsAppReporter:
+            },
+            'احذية': {
+                'الاسعار': 'من 200 إلى 800 جنيه',
+                'المقاسات': '36 إلى 45',
+                'الانواع': 'رياضية، كاجوال، رسمية',
+                'توصيل': '1-3 أيام حسب المحافظة'
+            }
+        }
+        
+        self.shipping_info = {
+            'القاهرة': {'زمن': '1-2 يوم', 'تكلفة': '25 جنيه'},
+            'الجيزة': {'زمن': '1-2 يوم', 'تكلفة': '25 جنيه'},
+            'الإسكندرية': {'زمن': '2-3 أيام', 'تكلفة': '35 جنيه'},
+            'باقي المحافظات': {'زمن': '3-5 أيام', 'تكلفة': '45 جنيه'}
+        }
+    
+    def get_product_info(self, category):
+        return self.products.get(category, {})
+    
+    def get_shipping_info(self, city):
+        return self.shipping_info.get(city, {})
+
+class ManagementKnowledgeBase:
+    """مكتبة المعرفة الإدارية"""
+    
+    def __init__(self):
+        self.report_templates = {
+            'يومي': self._daily_report_template(),
+            'أسبوعي': self._weekly_report_template(),
+            'شهري': self._monthly_report_template()
+        }
+    
+    def get_report_template(self, report_type):
+        return self.report_templates.get(report_type, '')
+    
+    def _daily_report_template(self):
+        return """
+        تقرير الأداء اليومي
+        التاريخ: {date}
+        
+        الطلبات:
+        - الإجمالي: {total_orders}
+        - الناجحة: {successful_orders}
+        - الملغاة: {cancelled_orders}
+        
+        العملاء:
+        - الجدد: {new_customers}
+        - الدائمون: {returning_customers}
+        
+        التوصيات:
+        {recommendations}
+        """
+    
+    def _weekly_report_template(self):
+        return "قالب التقرير الأسبوعي"
+    
+    def _monthly_report_template(self):
+        return "قالب التقرير الشهري"
+
+class WhatsAppReporter:
     """نظام التقارير التلقائي للواتساب"""
     
     def __init__(self, response_manager):
@@ -579,6 +619,40 @@ class EgyptianKnowledgeBase:
         except Exception as e:
             add_log('error', f'Failed to send agent report: {str(e)}', 'whatsapp_reporter')
             return False
+
+class ShopifyIntegration:
+    """تكامل مع متجر Shopify"""
+    
+    def __init__(self, store_url):
+        self.store_url = store_url
+    
+    def fetch_products(self, api_key):
+        """جلب المنتجات من Shopify"""
+        try:
+            # محاكاة - في الواقع يجب استخدام Shopify API
+            mock_products = [
+                {
+                    'id': '1',
+                    'title': 'تيشيرت قطني',
+                    'price': '150 جنيه',
+                    'category': 'ملابس',
+                    'available': True
+                },
+                {
+                    'id': '2', 
+                    'title': 'ساعة ذكية',
+                    'price': '500 جنيه',
+                    'category': 'اكسسوارات',
+                    'available': True
+                }
+            ]
+            
+            add_log('info', f'Fetched {len(mock_products)} products from Shopify', 'shopify')
+            return mock_products
+            
+        except Exception as e:
+            add_log('error', f'Failed to fetch Shopify products: {str(e)}', 'shopify')
+            return []
 
 if __name__ == '__main__':
     # اختبار الوظائف
