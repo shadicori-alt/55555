@@ -1,0 +1,13 @@
+{
+  "name": "بسم الله",
+  "short_name": "بسم الله",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1E40AF",
+  "theme_color": "#1E40AF",
+  "icons": [{
+    "src": "https://i.pravatar.cc/192",
+    "sizes": "192x192",
+    "type": "image/png"
+  }]
+}
