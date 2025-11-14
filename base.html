@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}لوحة التحكم{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .service-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .service-card.active {
+            background: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%);
+            border-color: #10b981;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .floating-assistant {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        
+        .chat-popup {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            width: 350px;
+            height: 400px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 999;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .chat-body {
+            height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        .chat-input {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- شريط التنقل -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-robot text-blue-600 ml-2"></i>
+                        نظام إدارة التواصل الذكي
+                    </h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('dashboard') }}" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md">
+                        <i class="fas fa-home"></i> الرئيسية
+                    </a>
+                    <button onclick="explainPage()" class="text-green-600 hover:text-green-800 px-3 py-2 rounded-md">
+                        <i class="fas fa-question-circle"></i> شرح الصفحة
+                    </button>
+                    <a href="{{ url_for('logout') }}" class="text-red-600 hover:text-red-800 px-3 py-2 rounded-md">
+                        <i class="fas fa-sign-out-alt"></i> تسجيل خروج
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- القائمة الجانبية -->
+    <div class="flex min-h-screen">
+        <div class="bg-white w-64 shadow-lg">
+            <div class="p-4">
+                <nav class="space-y-2">
+                    <a href="/admin/dashboard" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg">
+                        <i class="fas fa-tachometer-alt ml-3"></i>
+                        <span>الإحصائيات</span>
+                    </a>
+                    <a href="/admin/facebook" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg">
+                        <i class="fab fa-facebook ml-3"></i>
+                        <span>فيسبوك</span>
+                    </a>
+                    <a href="/admin/whatsapp" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg">
+                        <i class="fab fa-whatsapp ml-3"></i>
+                        <span>واتساب</span>
+                    </a>
+                    <a href="/admin/googlesheet" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg">
+                        <i class="fab fa-google ml-3"></i>
+                        <span>جوجل شيتس</span>
+                    </a>
+                    <a href="/admin/ai" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg">
+                        <i class="fas fa-robot ml-3"></i>
+                        <span>الذكاء الاصطناعي</span>
+                    </a>
+                    <a href="/admin/orders" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg">
+                        <i class="fas fa-shopping-cart ml-3"></i>
+                        <span>الطلبات</span>
+                    </a>
+                    <a href="/admin/agents" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg">
+                        <i class="fas fa-users ml-3"></i>
+                        <span>المناديب</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- المحتوى الرئيسي -->
+        <div class="flex-1 p-6">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- المساعد الذكي العائم -->
+    <div class="floating-assistant">
+        <button onclick="toggleChat()" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-4 rounded-full shadow-lg border-4 border-white">
+            <div class="flex flex-col items-center">
+                <i class="fas fa-robot text-xl mb-1"></i>
+                <span class="text-xs font-bold">مساعدك الذكي</span>
+            </div>
+        </button>
+    </div>
+
+    <!-- نافذة الدردشة -->
+    <div id="chatPopup" class="chat-popup">
+        <div class="chat-header">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold">المساعد الذكي</h3>
+                <button onclick="toggleChat()" class="text-white hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="chat-body" id="chatBody">
+            <div class="bg-gray-100 p-3 rounded-lg mb-3">
+                <p class="text-sm">مرحباً! كيف يمكنني مساعدتك اليوم؟</p>
+            </div>
+        </div>
+        <div class="chat-input">
+            <div class="flex">
+                <input type="text" id="chatInput" placeholder="اكتب سؤالك..." 
+                       class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="sendMessage()" class="ml-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleChat() {
+            const popup = document.getElementById('chatPopup');
+            popup.style.display = popup.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                // إضافة رسالة المستخدم
+                const chatBody = document.getElementById('chatBody');
+                const userMessage = document.createElement('div');
+                userMessage.className = 'bg-blue-100 p-3 rounded-lg mb-3 text-left';
+                userMessage.innerHTML = `<p class="text-sm">${message}</p>`;
+                chatBody.appendChild(userMessage);
+                
+                // تحديد السياق المناسب
+                let contextType = 'assistant'; // افتراضي: مساعد
+                
+                if (message.includes('سعر') || message.includes('منتج') || message.includes('طلب')) {
+                    contextType = 'customer';
+                } else if (message.includes('تقرير') || message.includes('تحليل') || message.includes('إدارة')) {
+                    contextType = 'admin';
+                }
+                
+                // إرسال للـ API
+                fetch('/api/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: message,
+                        page_context: window.location.pathname,
+                        context_type: contextType
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const botMessage = document.createElement('div');
+                    botMessage.className = 'bg-gray-100 p-3 rounded-lg mb-3';
+                    botMessage.innerHTML = `<p class="text-sm">${data.response}</p>`;
+                    chatBody.appendChild(botMessage);
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                });
+                
+                input.value = '';
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }
+        }
+
+        // إرسال عند الضغط على Enter
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // زر "اشرح لي هذه الصفحة"
+        function explainPage() {
+            const pageName = document.title || 'هذه الصفحة';
+            const input = document.getElementById('chatInput');
+            input.value = `اشرح لي وظائف ${pageName} خطوة بخطوة`;
+            sendMessage();
+        }
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

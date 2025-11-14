@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة المندوب - نظام إدارة الطلبات</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #f8fafc;
+            padding-bottom: 80px;
+        }
+        
+        .mobile-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin: 12px;
+            padding: 16px;
+        }
+        
+        .mobile-button {
+            min-height: 48px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .mobile-button:active {
+            transform: scale(0.98);
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 8px 0;
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 4px;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 12px;
+        }
+        
+        .nav-item.active {
+            color: #3b82f6;
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .order-card {
+            border-left: 4px solid #3b82f6;
+            margin-bottom: 12px;
+        }
+        
+        .order-card.assigned {
+            border-left-color: #f59e0b;
+        }
+        
+        .order-card.in-progress {
+            border-left-color: #10b981;
+        }
+        
+        .floating-action {
+            position: fixed;
+            bottom: 90px;
+            left: 20px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <!-- شريط العلوي -->
+    <div class="bg-white shadow-sm mb-4">
+        <div class="px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center ml-3">
+                        <i class="fas fa-user text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-gray-800">{{ agent[2] if agent else 'المندوب' }}</h1>
+                        <p class="text-sm text-gray-600">{% if agent %}{{ 'نشط' if agent[6] == 1 else 'غير نشط' }}{% else %}جاهز للعمل{% endif %}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="refreshOrders()" class="p-2 text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button onclick="showProfile()" class="p-2 text-gray-600 hover:text-blue-600">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- إحصائيات سريعة -->
+    <div class="px-4 mb-4">
+        <div class="grid grid-cols-3 gap-3">
+            <div class="bg-white rounded-lg p-3 text-center shadow-sm">
+                <div class="text-lg font-bold text-blue-600">{{ orders|length }}</div>
+                <div class="text-xs text-gray-600">طلباتي</div>
+            </div>
+            <div class="bg-white rounded-lg p-3 text-center shadow-sm">
+                <div class="text-lg font-bold text-orange-600">{{ orders|selectattr('status', 'equalto', 'new')|list|length }}</div>
+                <div class="text-xs text-gray-600">جديدة</div>
+            </div>
+            <div class="bg-white rounded-lg p-3 text-center shadow-sm">
+                <div class="text-lg font-bold text-green-600">{{ orders|selectattr('status', 'equalto', 'completed')|list|length }}</div>
+                <div class="text-xs text-gray-600">مكتملة</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- فلاتر الطلبات -->
+    <div class="px-4 mb-4">
+        <div class="flex space-x-2 overflow-x-auto pb-2">
+            <button onclick="filterOrders('all')" class="filter-btn flex-shrink-0 px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-medium">
+                الكل
+            </button>
+            <button onclick="filterOrders('new')" class="filter-btn flex-shrink-0 px-4 py-2 bg-gray-200 text-gray-700 rounded-full text-sm font-medium">
+                جديدة
+            </button>
+            <button onclick="filterOrders('assigned')" class="filter-btn flex-shrink-0 px-4 py-2 bg-gray-200 text-gray-700 rounded-full text-sm font-medium">
+                مُسندة
+            </button>
+            <button onclick="filterOrders('in_progress')" class="filter-btn flex-shrink-0 px-4 py-2 bg-gray-200 text-gray-700 rounded-full text-sm font-medium">
+                قيد التنفيذ
+            </button>
+        </div>
+    </div>
+
+    <!-- قائمة الطلبات -->
+    <div class="px-4">
+        <div id="orders-container">
+            {% for order in orders %}
+            <div class="mobile-card order-card {{ order[6] }}" data-status="{{ order[6] }}">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h3 class="font-bold text-gray-800">#{{ order[1] }}</h3>
+                        <p class="text-sm text-gray-600">{{ order[2] }}</p>
+                    </div>
+                    <div class="text-left">
+                        <span class="status-badge 
+                              {% if order[6] == 'new' %}bg-blue-100 text-blue-800
+                              {% elif order[6] == 'assigned' %}bg-orange-100 text-orange-800
+                              {% elif order[6] == 'in_progress' %}bg-yellow-100 text-yellow-800
+                              {% elif order[6] == 'completed' %}bg-green-100 text-green-800
+                              {% else %}bg-red-100 text-red-800{% endif %}">
+                            {% if order[6] == 'new' %}جديد
+                            {% elif order[6] == 'assigned' %}مُسند
+                            {% elif order[6] == 'in_progress' %}قيد التنفيذ
+                            {% elif order[6] == 'completed' %}مكتمل
+                            {% else %}ملغى{% endif %}
+                        </span>
+                        <p class="text-xs text-gray-500 mt-1">{{ order[8][:10] }}</p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-medium text-gray-700">المنتج:</span>
+                        <span class="text-sm text-gray-900">{{ order[4] }}</span>
+                    </div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-medium text-gray-700">الكمية:</span>
+                        <span class="text-sm text-gray-900">{{ order[5] }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-700">الهاتف:</span>
+                        <a href="tel:{{ order[3] }}" class="text-sm text-blue-600 hover:underline">
+                            <i class="fas fa-phone ml-1"></i>{{ order[3] }}
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-2">
+                    {% if order[6] == 'new' %}
+                        <button onclick="acceptOrder('{{ order[1] }}')" class="mobile-button flex-1 bg-green-600 text-white">
+                            <i class="fas fa-check ml-2"></i>قبول الطلب
+                        </button>
+                    {% elif order[6] == 'assigned' %}
+                        <button onclick="startOrder('{{ order[1] }}')" class="mobile-button flex-1 bg-blue-600 text-white">
+                            <i class="fas fa-play ml-2"></i>بدء التنفيذ
+                        </button>
+                    {% elif order[6] == 'in_progress' %}
+                        <button onclick="completeOrder('{{ order[1] }}')" class="mobile-button flex-1 bg-purple-600 text-white">
+                            <i class="fas fa-flag-checkered ml-2"></i>إكمال الطلب
+                        </button>
+                    {% else %}
+                        <button onclick="viewOrder('{{ order[1] }}')" class="mobile-button flex-1 bg-gray-600 text-white">
+                            <i class="fas fa-eye ml-2"></i>عرض التفاصيل
+                        </button>
+                    {% endif %}
+                    
+                    <button onclick="showOrderActions('{{ order[1] }}')" class="mobile-button px-4 bg-gray-200 text-gray-700">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="mobile-card text-center py-12">
+                <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-800 mb-2">لا توجد طلبات حالياً</h3>
+                <p class="text-gray-600">سيتم إعلامك عند وصول طلبات جديدة</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- زر العمل السريع -->
+    <div class="floating-action" onclick="showQuickActions()">
+        <i class="fas fa-plus"></i>
+    </div>
+
+    <!-- شريط التنقل السفلي -->
+    <div class="bottom-nav">
+        <div class="flex">
+            <a href="/agent/dashboard" class="nav-item active">
+                <i class="nav-icon fas fa-list"></i>
+                <span>الطلبات</span>
+            </a>
+            <a href="#" class="nav-item" onclick="showStats()">
+                <i class="nav-icon fas fa-chart-bar"></i>
+                <span>الإحصائيات</span>
+            </a>
+            <a href="#" class="nav-item" onclick="showNotifications()">
+                <i class="nav-icon fas fa-bell"></i>
+                <span>الإشعارات</span>
+            </a>
+            <a href="#" class="nav-item" onclick="showProfile()">
+                <i class="nav-icon fas fa-user"></i>
+                <span>حسابي</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- نافذة الإجراءات السريعة -->
+    <div id="quick-actions-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-800">إجراءات سريعة</h3>
+                <button onclick="closeQuickActions()" class="text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="refreshOrders()" class="mobile-button bg-blue-600 text-white">
+                    <i class="fas fa-sync-alt ml-2"></i>تحديث
+                </button>
+                <button onclick="showStats()" class="mobile-button bg-green-600 text-white">
+                    <i class="fas fa-chart-bar ml-2"></i>إحصائيات
+                </button>
+                <button onclick="showNotifications()" class="mobile-button bg-orange-600 text-white">
+                    <i class="fas fa-bell ml-2"></i>إشعارات
+                </button>
+                <button onclick="showProfile()" class="mobile-button bg-purple-600 text-white">
+                    <i class="fas fa-user ml-2"></i>حسابي
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentAgentId = '{{ agent[1] if agent else '' }}';
+        
+        // تصفية الطلبات
+        function filterOrders(status) {
+            const orders = document.querySelectorAll('.order-card');
+            const buttons = document.querySelectorAll('.filter-btn');
+            
+            // تحديث حالة الأزرار
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            
+            event.target.classList.remove('bg-gray-200', 'text-gray-700');
+            event.target.classList.add('bg-blue-600', 'text-white');
+            
+            // عرض/إخفاء الطلبات
+            orders.forEach(order => {
+                if (status === 'all' || order.getAttribute('data-status') === status) {
+                    order.style.display = 'block';
+                } else {
+                    order.style.display = 'none';
+                }
+            });
+        }
+        
+        // قبول الطلب
+        function acceptOrder(orderId) {
+            if (confirm('هل أنت متأكد من قبول هذا الطلب؟')) {
+                fetch('/agent/orders/accept', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_id: orderId,
+                        agent_id: currentAgentId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('تم قبول الطلب بنجاح!');
+                        location.reload();
+                    } else {
+                        alert('فشل قبول الطلب: ' + data.message);
+                    }
+                });
+            }
+        }
+        
+        // بدء تنفيذ الطلب
+        function startOrder(orderId) {
+            if (confirm('هل أنت متأكد من بدء تنفيذ هذا الطلب؟')) {
+                fetch('/agent/orders/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_id: orderId,
+                        agent_id: currentAgentId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('تم بدء تنفيذ الطلب!');
+                        location.reload();
+                    } else {
+                        alert('فشل تحديث حالة الطلب: ' + data.message);
+                    }
+                });
+            }
+        }
+        
+        // إكمال الطلب
+        function completeOrder(orderId) {
+            if (confirm('هل أنت متأكد من إكمال هذا الطلب؟')) {
+                fetch('/agent/orders/complete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_id: orderId,
+                        agent_id: currentAgentId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('مبروك! تم إكمال الطلب بنجاح!');
+                        location.reload();
+                    } else {
+                        alert('فشل إكمال الطلب: ' + data.message);
+                    }
+                });
+            }
+        }
+        
+        // عرض تفاصيل الطلب
+        function viewOrder(orderId) {
+            alert('سيتم عرض تفاصيل الطلب: ' + orderId);
+        }
+        
+        // عرض إجراءات الطلب
+        function showOrderActions(orderId) {
+            const actions = [
+                'عرض التفاصيل',
+                'الاتصال بالعميل',
+                'تحديث الحالة',
+                'إلغاء الطلب'
+            ];
+            
+            const choice = prompt('اختر إجراء:\n1. ' + actions.join('\n2. ') + '\n\nأدخل رقم الإجراء:');
+            
+            if (choice === '1') {
+                viewOrder(orderId);
+            } else if (choice === '2') {
+                // الاتصال بالعميل
+                alert('سيتم فتح تطبيق الاتصال');
+            } else if (choice === '3') {
+                alert('سيتم فتح نافذة تحديث الحالة');
+            } else if (choice === '4') {
+                if (confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) {
+                    alert('تم إلغاء الطلب');
+                }
+            }
+        }
+        
+        // تحديث الطلبات
+        function refreshOrders() {
+            const button = event.target;
+            button.classList.add('fa-spin');
+            
+            setTimeout(() => {
+                button.classList.remove('fa-spin');
+                alert('تم تحديث الطلبات');
+            }, 1000);
+        }
+        
+        // عرض الإحصائيات
+        function showStats() {
+            alert('سيتم عرض صفحة الإحصائيات');
+        }
+        
+        // عرض الإشعارات
+        function showNotifications() {
+            alert('سيتم عرض صفحة الإشعارات');
+        }
+        
+        // عرض الملف الشخصي
+        function showProfile() {
+            alert('سيتم عرض صفحة الملف الشخصي');
+        }
+        
+        // عرض الإجراءات السريعة
+        function showQuickActions() {
+            document.getElementById('quick-actions-modal').classList.remove('hidden');
+        }
+        
+        // إغلاق الإجراءات السريعة
+        function closeQuickActions() {
+            document.getElementById('quick-actions-modal').classList.add('hidden');
+        }
+        
+        // تحديث تلقائي للطلبات كل 30 ثانية
+        setInterval(() => {
+            // محاكاة تحديث الطلبات
+            console.log('تحديث تلقائي للطلبات...');
+        }, 30000);
+        
+        // منع الرجوع بالزر
+        window.addEventListener('load', function() {
+            window.history.pushState(null, null, window.location.href);
+            window.onpopstate = function () {
+                window.history.go(1);
+            };
+        });
+    </script>
+</body>
+</html>

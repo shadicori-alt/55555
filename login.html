@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - لوحة التحكم</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .login-input {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .login-input:focus {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .login-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .login-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .floating-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+        
+        .shape {
+            position: absolute;
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .shape:nth-child(1) {
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .shape:nth-child(2) {
+            top: 20%;
+            right: 10%;
+            animation-delay: 2s;
+        }
+        
+        .shape:nth-child(3) {
+            bottom: 20%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center">
+    <!-- الأشكال العائمة -->
+    <div class="floating-shapes">
+        <div class="shape">
+            <i class="fas fa-robot text-6xl text-white"></i>
+        </div>
+        <div class="shape">
+            <i class="fas fa-comments text-5xl text-white"></i>
+        </div>
+        <div class="shape">
+            <i class="fas fa-cogs text-4xl text-white"></i>
+        </div>
+    </div>
+
+    <!-- بطاقة تسجيل الدخول -->
+    <div class="login-card rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
+        <!-- الشعار -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-4">
+                <i class="fas fa-robot text-3xl text-white"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">نظام إدارة التواصل</h1>
+            <p class="text-gray-600">لوحة التحكم الذكية</p>
+        </div>
+
+        <!-- رسائل التنبيه -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                        <i class="fas {% if category == 'error' %}fa-exclamation-triangle{% else %}fa-check-circle{% endif %} ml-2"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- نموذج تسجيل الدخول -->
+        <form method="POST" class="space-y-6">
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-lock ml-2"></i>
+                    كلمة المرور
+                </label>
+                <input type="password" 
+                       name="password" 
+                       id="password" 
+                       required
+                       class="login-input w-full px-4 py-3 rounded-lg focus:outline-none transition-all duration-300"
+                       placeholder="أدخل كلمة المرور">
+            </div>
+
+            <button type="submit" class="login-button w-full text-white py-3 rounded-lg font-medium focus:outline-none focus:ring-4 focus:ring-purple-300">
+                <i class="fas fa-sign-in-alt ml-2"></i>
+                تسجيل الدخول
+            </button>
+        </form>
+
+        <!-- معلومات إضافية -->
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600">
+                <i class="fas fa-shield-alt ml-1"></i>
+                نظام آمن وموثوق
+            </p>
+        </div>
+
+        <!-- روابط سريعة -->
+        <div class="mt-8 pt-6 border-t border-gray-200">
+            <div class="flex justify-center space-x-4">
+                <a href="#" class="text-gray-400 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-question-circle text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-envelope text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-phone text-xl"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- معلومات النظام -->
+    <div class="absolute bottom-4 left-4 right-4 text-center">
+        <p class="text-white text-sm opacity-75">
+            نظام إدارة التواصل الذكي v1.0
+        </p>
+    </div>
+
+    <script>
+        // تحسين تجربة المستخدم
+        document.getElementById('password').focus();
+        
+        // منع إرسال النموذج بالضغط على Enter إذا كان الحقل فارغ
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !this.value.trim()) {
+                e.preventDefault();
+            }
+        });
+        
+        // إضافة تأثيرات بصرية عند التفاعل
+        document.querySelector('.login-button').addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        
+        document.querySelector('.login-button').addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    </script>
+</body>
+</html>

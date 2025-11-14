@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}الإحصائيات - لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- عنوان الصفحة -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">لوحة التحكم</h1>
+        <p class="text-gray-600">مرحباً بك في نظام إدارة التواصل الذكي</p>
+        <button onclick="explainPage()" class="mt-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
+            <i class="fas fa-question-circle ml-2"></i>
+            اشرح لي هذه الصفحة
+        </button>
+    </div>
+
+    <!-- بطاقات الإحصائيات -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">رسائل اليوم</p>
+                    <p class="text-2xl font-bold text-blue-600">{{ today_messages }}</p>
+                </div>
+                <div class="bg-blue-100 p-3 rounded-full">
+                    <i class="fas fa-envelope text-blue-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">تعليقات اليوم</p>
+                    <p class="text-2xl font-bold text-green-600">{{ today_comments }}</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-full">
+                    <i class="fas fa-comments text-green-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">طلبات جديدة</p>
+                    <p class="text-2xl font-bold text-orange-600">{{ new_orders }}</p>
+                </div>
+                <div class="bg-orange-100 p-3 rounded-full">
+                    <i class="fas fa-shopping-cart text-orange-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">مناديب نشطين</p>
+                    <p class="text-2xl font-bold text-purple-600">{{ active_agents }}</p>
+                </div>
+                <div class="bg-purple-100 p-3 rounded-full">
+                    <i class="fas fa-users text-purple-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- حالة الخدمات -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">حالة الخدمات</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="service-card {% if services.facebook %}active{% endif %} rounded-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <i class="fab fa-facebook text-blue-600 text-2xl ml-3"></i>
+                        <span class="font-semibold text-gray-800">فيسبوك</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="facebook-toggle" {% if services.facebook %}checked{% endif %} onchange="toggleService('facebook')">
+                            <span class="slider"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <span class="status-indicator {% if services.facebook %}text-green-600{% else %}text-red-600{% endif %}">
+                        <i class="fas fa-circle"></i>
+                        {% if services.facebook %}نشط{% else %}معطل{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div class="service-card {% if services.whatsapp %}active{% endif %} rounded-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <i class="fab fa-whatsapp text-green-600 text-2xl ml-3"></i>
+                        <span class="font-semibold text-gray-800">واتساب</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="whatsapp-toggle" {% if services.whatsapp %}checked{% endif %} onchange="toggleService('whatsapp')">
+                            <span class="slider"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <span class="status-indicator {% if services.whatsapp %}text-green-600{% else %}text-red-600{% endif %}">
+                        <i class="fas fa-circle"></i>
+                        {% if services.whatsapp %}نشط{% else %}معطل{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div class="service-card {% if services.googlesheet %}active{% endif %} rounded-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <i class="fab fa-google text-red-600 text-2xl ml-3"></i>
+                        <span class="font-semibold text-gray-800">جوجل شيتس</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="googlesheet-toggle" {% if services.googlesheet %}checked{% endif %} onchange="toggleService('googlesheet')">
+                            <span class="slider"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <span class="status-indicator {% if services.googlesheet %}text-green-600{% else %}text-red-600{% endif %}">
+                        <i class="fas fa-circle"></i>
+                        {% if services.googlesheet %}نشط{% else %}معطل{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div class="service-card {% if services.openai %}active{% endif %} rounded-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <i class="fas fa-robot text-purple-600 text-2xl ml-3"></i>
+                        <span class="font-semibold text-gray-800">OpenAI</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="openai-toggle" {% if services.openai %}checked{% endif %} onchange="toggleService('openai')">
+                            <span class="slider"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <span class="status-indicator {% if services.openai %}text-green-600{% else %}text-red-600{% endif %}">
+                        <i class="fas fa-circle"></i>
+                        {% if services.openai %}نشط{% else %}معطل{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div class="service-card {% if services.deepseek %}active{% endif %} rounded-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <i class="fas fa-brain text-indigo-600 text-2xl ml-3"></i>
+                        <span class="font-semibold text-gray-800">DeepSeek</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="deepseek-toggle" {% if services.deepseek %}checked{% endif %} onchange="toggleService('deepseek')">
+                            <span class="slider"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <span class="status-indicator {% if services.deepseek %}text-green-600{% else %}text-red-600{% endif %}">
+                        <i class="fas fa-circle"></i>
+                        {% if services.deepseek %}نشط{% else %}معطل{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- روابط سريعة -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">روابط سريعة</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <a href="{{ url_for('facebook_settings') }}" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                <i class="fab fa-facebook text-blue-600 text-xl ml-3"></i>
+                <span class="font-medium text-gray-800">إعدادات فيسبوك</span>
+            </a>
+            
+            <a href="{{ url_for('whatsapp_settings') }}" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                <i class="fab fa-whatsapp text-green-600 text-xl ml-3"></i>
+                <span class="font-medium text-gray-800">إعدادات واتساب</span>
+            </a>
+            
+            <a href="{{ url_for('orders') }}" class="flex items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+                <i class="fas fa-shopping-cart text-orange-600 text-xl ml-3"></i>
+                <span class="font-medium text-gray-800">إدارة الطلبات</span>
+            </a>
+            
+            <a href="{{ url_for('agents') }}" class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                <i class="fas fa-users text-purple-600 text-xl ml-3"></i>
+                <span class="font-medium text-gray-800">إدارة المناديب</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleService(service) {
+    const toggle = document.getElementById(service + '-toggle');
+    const status = toggle.checked;
+    
+    fetch('/admin/toggle-service', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            service: service,
+            status: status
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // تحديث واجهة المستخدم
+            const card = toggle.closest('.service-card');
+            if (status) {
+                card.classList.add('active');
+            } else {
+                card.classList.remove('active');
+            }
+        }
+    });
+}
+
+// زر شرح الصفحة
+function explainPage() {
+    const input = document.getElementById('chatInput');
+    input.value = 'اشرح لي وظائف لوحة التحكم خطوة بخطوة';
+    sendMessage();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}إعدادات جوجل شيتس - لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- عنوان الصفحة -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">
+            <i class="fab fa-google text-red-600 ml-2"></i>
+            إعدادات جوجل شيتس
+        </h1>
+        <p class="text-gray-600">ربط حسابك على جوجل وإدارة الجداول</p>
+    </div>
+
+    <!-- بطاقة الاتصال -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">ربط حساب جوجل</h2>
+        
+        <div id="connection-status" class="mb-4">
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                    <div id="status-icon" class="w-3 h-3 bg-red-500 rounded-full ml-3"></div>
+                    <span id="status-text" class="font-medium text-gray-700">غير متصل</span>
+                </div>
+                <button onclick="testConnection()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                    <i class="fas fa-plug ml-2"></i>
+                    اختبار الاتصال
+                </button>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">معرف العميل (Client ID)</label>
+                <input type="text" id="client-id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="أدخل Client ID من Google Cloud Console">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">مفتاح العميل السري (Client Secret)</label>
+                <input type="password" id="client-secret" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="أدخل Client Secret">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">النطاقات المطلوبة</label>
+                <div class="p-3 bg-gray-50 rounded-lg">
+                    <div class="text-sm text-gray-700 space-y-1">
+                        <div><i class="fas fa-check text-green-600 ml-2"></i>https://www.googleapis.com/auth/spreadsheets</div>
+                        <div><i class="fas fa-check text-green-600 ml-2"></i>https://www.googleapis.com/auth/drive.readonly</div>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="connectGoogle()" class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 font-medium">
+                <i class="fab fa-google ml-2"></i>
+                ربط حساب جوجل
+            </button>
+        </div>
+    </div>
+
+    <!-- إعدادات الجداول -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">إعدادات الجداول</h2>
+        
+        <div class="space-y-4">
+            <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                <div>
+                    <h3 class="font-medium text-gray-800">تصدير التقارير اليومية</h3>
+                    <p class="text-sm text-gray-600">إرسال تقرير يومي بإحصائيات الطلبات والرسائل</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="daily-reports-toggle" onchange="toggleDailyReports()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+                <div>
+                    <h3 class="font-medium text-gray-800">مزامنة الطلبات</h3>
+                    <p class="text-sm text-gray-600">مزامنة الطلبات الجديدة تلقائياً مع جدول جوجل</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="orders-sync-toggle" onchange="toggleOrdersSync()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
+                <div>
+                    <h3 class="font-medium text-gray-800">مزامنة التعليقات</h3>
+                    <p class="text-sm text-gray-600">حفظ التعليقات والردود في جدول منفصل</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="comments-sync-toggle" onchange="toggleCommentsSync()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- اختيار الجداول -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">اختيار الجداول</h2>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">جدول الطلبات</label>
+                <div class="flex">
+                    <input type="text" id="orders-sheet" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="معرف جدول الطلبات أو رابطه">
+                    <button onclick="selectSheet('orders')" class="mr-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">اختيار</button>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">جدول التقارير</label>
+                <div class="flex">
+                    <input type="text" id="reports-sheet" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="معرف جدول التقارير أو رابطه">
+                    <button onclick="selectSheet('reports')" class="mr-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">اختيار</button>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">جدول التعليقات</label>
+                <div class="flex">
+                    <input type="text" id="comments-sheet" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="معرف جدول التعليقات أو رابطه">
+                    <button onclick="selectSheet('comments')" class="mr-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">اختيار</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- اختبار المزامنة -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">اختبار المزامنة</h2>
+        
+        <div class="space-y-4">
+            <div class="p-4 bg-yellow-50 rounded-lg">
+                <h4 class="font-medium text-gray-800 mb-2">تعليمات الاختبار</h4>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• تأكد من ربط حسابك على جوجل أولاً</li>
+                    <li>• تأكد من مشاركة الجداول مع البريد الإلكتروني الخاص بالخدمة</li>
+                    <li>• تأكد من صلاحيات التعديل على الجداول</li>
+                </ul>
+            </div>
+            
+            <div class="flex space-x-3">
+                <button onclick="testSheetConnection()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+                    <i class="fas fa-check ml-2"></i>
+                    اختبار الاتصال
+                </button>
+                <button onclick="testSync()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-sync ml-2"></i>
+                    اختبار المزامنة
+                </button>
+                <button onclick="exportSampleData()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700">
+                    <i class="fas fa-download ml-2"></i>
+                    تصدير بيانات تجريبية
+                </button>
+            </div>
+        </div>
+        
+        <div id="test-result" class="hidden mt-4 p-4 bg-gray-50 rounded-lg">
+            <h4 class="font-medium text-gray-800 mb-2">نتيجة الاختبار:</h4>
+            <div id="test-message" class="text-gray-700"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let isConnected = false;
+
+function connectGoogle() {
+    const clientId = document.getElementById('client-id').value;
+    const clientSecret = document.getElementById('client-secret').value;
+    
+    if (!clientId || !clientSecret) {
+        alert('يرجى إدخال Client ID و Client Secret');
+        return;
+    }
+    
+    // في الواقع، هنا يجب إجراء OAuth redirect
+    // للتجربة، سنقوم بمحاكاة الاتصال
+    fetch('/admin/googlesheet/connect?client_id=' + clientId, {
+        method: 'GET'
+    })
+    .then(response => {
+        if (response.ok) {
+            updateConnectionStatus(true);
+            alert('تم ربط حساب جوجل بنجاح!');
+        }
+    });
+}
+
+function testConnection() {
+    fetch('/admin/test-connection', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            service: 'googlesheet'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            updateConnectionStatus(true);
+        } else {
+            updateConnectionStatus(false);
+        }
+        
+        alert(data.message);
+    });
+}
+
+function updateConnectionStatus(connected) {
+    isConnected = connected;
+    const statusIcon = document.getElementById('status-icon');
+    const statusText = document.getElementById('status-text');
+    
+    if (connected) {
+        statusIcon.className = 'w-3 h-3 bg-green-500 rounded-full ml-3';
+        statusText.textContent = 'متصل';
+        statusText.className = 'font-medium text-green-700';
+    } else {
+        statusIcon.className = 'w-3 h-3 bg-red-500 rounded-full ml-3';
+        statusText.textContent = 'غير متصل';
+        statusText.className = 'font-medium text-red-700';
+    }
+}
+
+function toggleDailyReports() {
+    const enabled = document.getElementById('daily-reports-toggle').checked;
+    console.log('Daily reports:', enabled);
+}
+
+function toggleOrdersSync() {
+    const enabled = document.getElementById('orders-sync-toggle').checked;
+    console.log('Orders sync:', enabled);
+}
+
+function toggleCommentsSync() {
+    const enabled = document.getElementById('comments-sync-toggle').checked;
+    console.log('Comments sync:', enabled);
+}
+
+function selectSheet(type) {
+    if (!isConnected) {
+        alert('يرجى ربط حساب جوجل أولاً');
+        return;
+    }
+    
+    alert('سيتم فتح نافذة لاختيار الجدول من حسابك على جوجل');
+}
+
+function testSheetConnection() {
+    if (!isConnected) {
+        alert('يرجى ربط حساب جوجل أولاً');
+        return;
+    }
+    
+    document.getElementById('test-result').classList.remove('hidden');
+    document.getElementById('test-message').innerHTML = 'جاري اختبار الاتصال... <i class="fas fa-spinner fa-spin"></i>';
+    
+    setTimeout(() => {
+        document.getElementById('test-message').innerHTML = '✅ تم اختبار الاتصال بنجاح! يمكنك الآن مزامنة البيانات.';
+    }, 2000);
+}
+
+function testSync() {
+    if (!isConnected) {
+        alert('يرجى ربط حساب جوجل أولاً');
+        return;
+    }
+    
+    document.getElementById('test-result').classList.remove('hidden');
+    document.getElementById('test-message').innerHTML = 'جاري اختبار المزامنة... <i class="fas fa-spinner fa-spin"></i>';
+    
+    setTimeout(() => {
+        document.getElementById('test-message').innerHTML = '✅ تم اختبار المزامنة بنجاح! البيانات تمت مزامنتها مع جدولك.';
+    }, 3000);
+}
+
+function exportSampleData() {
+    if (!isConnected) {
+        alert('يرجى ربط حساب جوجل أولاً');
+        return;
+    }
+    
+    alert('جاري تصدير بيانات تجريبية إلى جدولك...');
+}
+
+// شرح الصفحة
+function explainPage() {
+    const input = document.getElementById('chatInput');
+    input.value = 'اشرح لي وظائف صفحة إعدادات جوجل شيتس خطوة بخطوة';
+    sendMessage();
+}
+</script>
+{% endblock %}

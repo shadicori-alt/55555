@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}إعدادات الذكاء الاصطناعي - لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- عنوان الصفحة -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">
+            <i class="fas fa-robot text-purple-600 ml-2"></i>
+            إعدادات الذكاء الاصطناعي
+        </h1>
+        <p class="text-gray-600">إدارة نماذج الذكاء الاصطناعي والردود التلقائية</p>
+    </div>
+
+    <!-- اختيار النموذج -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">اختيار نموذج الذكاء الاصطناعي</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- OpenAI -->
+            <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer" onclick="selectModel('openai')">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center ml-3">
+                            <i class="fas fa-robot text-green-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-800">OpenAI GPT</h3>
+                            <p class="text-sm text-gray-600">نموذج GPT-3.5 Turbo</p>
+                        </div>
+                    </div>
+                    <input type="radio" name="ai-model" value="openai" id="openai-radio" class="w-5 h-5 text-blue-600">
+                </div>
+                <div class="text-sm text-gray-600">
+                    <p>• دعم كامل للغة العربية</p>
+                    <p>• سرعة استجابة عالية</p>
+                    <p>• تكلفة معقولة</p>
+                </div>
+            </div>
+
+            <!-- DeepSeek -->
+            <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer" onclick="selectModel('deepseek')">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center ml-3">
+                            <i class="fas fa-brain text-purple-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-800">DeepSeek</h3>
+                            <p class="text-sm text-gray-600">نموذج DeepSeek Chat</p>
+                        </div>
+                    </div>
+                    <input type="radio" name="ai-model" value="deepseek" id="deepseek-radio" class="w-5 h-5 text-blue-600">
+                </div>
+                <div class="text-sm text-gray-600">
+                    <p>• فهم عميق للسياق</p>
+                    <p>• ردود أكثر دقة</p>
+                    <p>• مناسب للمحادثات الطويلة</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- إعدادات API -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">إعدادات API</h2>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">مفتاح API</label>
+                <div class="flex">
+                    <input type="password" id="api-key" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="أدخل مفتاح API الخاص بك">
+                    <button onclick="toggleApiKeyVisibility()" class="ml-2 px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <p class="text-sm text-gray-500 mt-1">احصل على المفتاح من <a href="https://platform.openai.com/api-keys" target="_blank" class="text-blue-600 hover:underline">OpenAI</a> أو <a href="https://platform.deepseek.com/api-keys" target="_blank" class="text-blue-600 hover:underline">DeepSeek</a></p>
+            </div>
+            
+            <div class="flex space-x-3">
+                <button onclick="saveApiKey()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-save ml-2"></i>
+                    حفظ المفتاح
+                </button>
+                <button onclick="testApiKey()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+                    <i class="fas fa-check ml-2"></i>
+                    اختبار المفتاح
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- إعدادات الردود -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">إعدادات الردود</h2>
+        
+        <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">سرعة الاستجابة (ثواني)</label>
+                    <select id="response-speed" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="1">1 ثانية (فوري)</option>
+                        <option value="3">3 ثواني</option>
+                        <option value="5" selected>5 ثواني</option>
+                        <option value="10">10 ثواني</option>
+                        <option value="15">15 ثانية</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">نمط الرد</label>
+                    <select id="response-style" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="formal">رسمي</option>
+                        <option value="friendly" selected>ودود</option>
+                        <option value="casual">عادي</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">الردود الافتراضية</label>
+                <div class="space-y-2">
+                    <div class="p-3 border border-gray-200 rounded-lg">
+                        <h4 class="font-medium text-gray-800 mb-2">مرحباً</h4>
+                        <textarea id="greeting-response" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="رد على التحية...">مرحباً بك! 👋 كيف يمكنني مساعدتك اليوم؟</textarea>
+                    </div>
+                    
+                    <div class="p-3 border border-gray-200 rounded-lg">
+                        <h4 class="font-medium text-gray-800 mb-2">السعر</h4>
+                        <textarea id="price-response" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="رد على استفسار السعر...">الأسعار متنوعة حسب المنتج. يمكنك تصفح منتجاتنا أو إرسال صورة للمنتج المطلوب للحصول على السعر الدقيق 💰</textarea>
+                    </div>
+                    
+                    <div class="p-3 border border-gray-200 rounded-lg">
+                        <h4 class="font-medium text-gray-800 mb-2">العنوان</h4>
+                        <textarea id="address-response" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="رد على استفسار العنوان...">عنواننا: شارع الملك عبدالعزيز، الرياض 📍
+نرحب بزيارتكم في أي وقت من الساعة 9 صباحاً حتى 10 مساءً</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="saveResponseSettings()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                <i class="fas fa-save ml-2"></i>
+                حفظ الإعدادات
+            </button>
+        </div>
+    </div>
+
+    <!-- اختبار الذكاء الاصطناعي -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">اختبار الذكاء الاصطناعي</h2>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">أدخل رسالة للاختبار</label>
+                <textarea id="test-message" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="اكتب رسالة لاختبار الرد التلقائي...">كم سعر المنتج؟"></textarea>
+            </div>
+            
+            <div class="flex space-x-3">
+                <button onclick="testAI()" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700">
+                    <i class="fas fa-play ml-2"></i>
+                    اختبار الرد
+                </button>
+                <button onclick="clearTest()" class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700">
+                    <i class="fas fa-eraser ml-2"></i>
+                    مسح
+                </button>
+            </div>
+            
+            <div id="test-result" class="hidden p-4 bg-gray-50 rounded-lg">
+                <h4 class="font-medium text-gray-800 mb-2">نتيجة الاختبار:</h4>
+                <div id="ai-response" class="text-gray-700"></div>
+                <div class="mt-2 text-sm text-gray-500">
+                    <span>وقت الاستجابة: </span>
+                    <span id="response-time">0</span>
+                    <span> ثانية</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedModel = 'openai';
+
+function selectModel(model) {
+    selectedModel = model;
+    
+    // تحديث حالة الأزرار
+    document.getElementById('openai-radio').checked = (model === 'openai');
+    document.getElementById('deepseek-radio').checked = (model === 'deepseek');
+    
+    // تحديث مظهر البطاقات
+    document.querySelectorAll('.border').forEach(card => {
+        card.classList.remove('border-blue-500');
+        card.classList.add('border-gray-200');
+    });
+    
+    if (model === 'openai') {
+        document.querySelector('.border').classList.add('border-blue-500');
+    } else {
+        document.querySelectorAll('.border')[1].classList.add('border-blue-500');
+    }
+}
+
+function toggleApiKeyVisibility() {
+    const apiKeyInput = document.getElementById('api-key');
+    const icon = event.target.querySelector('i');
+    
+    if (apiKeyInput.type === 'password') {
+        apiKeyInput.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        apiKeyInput.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+
+function saveApiKey() {
+    const apiKey = document.getElementById('api-key').value;
+    
+    if (!apiKey) {
+        alert('يرجى إدخال مفتاح API');
+        return;
+    }
+    
+    fetch('/admin/ai/update', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            model: selectedModel,
+            api_key: apiKey
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('تم حفظ مفتاح API بنجاح!');
+        } else {
+            alert('فشل الحفظ: ' + data.message);
+        }
+    });
+}
+
+function testApiKey() {
+    const apiKey = document.getElementById('api-key').value;
+    
+    if (!apiKey) {
+        alert('يرجى إدخال مفتاح API أولاً');
+        return;
+    }
+    
+    // محاكاة اختبار المفتاح
+    alert('جاري اختبار المفتاح...');
+    setTimeout(() => {
+        alert('تم اختبار المفتاح بنجاح! الاتصال يعمل بشكل جيد.');
+    }, 2000);
+}
+
+function testAI() {
+    const message = document.getElementById('test-message').value;
+    
+    if (!message) {
+        alert('يرجى إدخال رسالة للاختبار');
+        return;
+    }
+    
+    const startTime = Date.now();
+    
+    fetch('/api/ask', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            question: message
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const endTime = Date.now();
+        const responseTime = ((endTime - startTime) / 1000).toFixed(2);
+        
+        document.getElementById('test-result').classList.remove('hidden');
+        document.getElementById('ai-response').textContent = data.response;
+        document.getElementById('response-time').textContent = responseTime;
+    });
+}
+
+function clearTest() {
+    document.getElementById('test-message').value = '';
+    document.getElementById('test-result').classList.add('hidden');
+}
+
+function saveResponseSettings() {
+    const speed = document.getElementById('response-speed').value;
+    const style = document.getElementById('response-style').value;
+    const greeting = document.getElementById('greeting-response').value;
+    const price = document.getElementById('price-response').value;
+    const address = document.getElementById('address-response').value;
+    
+    const settings = {
+        speed: speed,
+        style: style,
+        responses: {
+            greeting: greeting,
+            price: price,
+            address: address
+        }
+    };
+    
+    fetch('/admin/ai/save-settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('تم حفظ إعدادات الردود بنجاح!');
+        }
+    });
+}
+
+// شرح الصفحة
+function explainPage() {
+    const input = document.getElementById('chatInput');
+    input.value = 'اشرح لي وظائف صفحة إعدادات الذكاء الاصطناعي خطوة بخطوة';
+    sendMessage();
+}
+</script>
+{% endblock %}

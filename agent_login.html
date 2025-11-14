@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دخول المندوب - نظام إدارة الطلبات</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .mobile-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        
+        .mobile-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+            min-height: 50px;
+        }
+        
+        .mobile-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .mobile-input {
+            min-height: 50px;
+            font-size: 16px;
+        }
+        
+        /* تصميم متجاوب للموبايل */
+        @media (max-width: 640px) {
+            .mobile-card {
+                margin: 10px;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+    <!-- بطاقة تسجيل الدخول -->
+    <div class="mobile-card rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+        <!-- الشعار -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-4">
+                <i class="fas fa-motorcycle text-2xl text-white"></i>
+            </div>
+            <h1 class="text-xl font-bold text-gray-800 mb-2">دخول المندوب</h1>
+            <p class="text-gray-600 text-sm">نظام إدارة الطلبات</p>
+        </div>
+
+        <!-- نموذج تسجيل الدخول -->
+        <form id="agent-login-form" class="space-y-4">
+            <div>
+                <label for="agent-id" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-id-card ml-2"></i>
+                    معرف المندوب
+                </label>
+                <input type="text" 
+                       name="agent_id" 
+                       id="agent-id" 
+                       required
+                       class="mobile-input w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       placeholder="أدخل معرف المندوب">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-lock ml-2"></i>
+                    كلمة المرور
+                </label>
+                <input type="password" 
+                       name="password" 
+                       id="password" 
+                       required
+                       class="mobile-input w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       placeholder="أدخل كلمة المرور">
+            </div>
+
+            <button type="submit" class="mobile-button w-full text-white py-3 rounded-lg font-medium focus:outline-none focus:ring-4 focus:ring-purple-300">
+                <i class="fas fa-sign-in-alt ml-2"></i>
+                تسجيل الدخول
+            </button>
+        </form>
+
+        <!-- رابط الدخول السريع -->
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600 mb-3">لديك رابط دخول؟</p>
+            <div class="flex">
+                <input type="text" id="quick-link" class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="أو أدخل رابط الدخول">
+                <button onclick="useQuickLink()" class="mr-2 px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700">
+                    دخول
+                </button>
+            </div>
+        </div>
+
+        <!-- معلومات التطبيق -->
+        <div class="mt-6 pt-4 border-t border-gray-200 text-center">
+            <p class="text-xs text-gray-500">
+                <i class="fas fa-shield-alt ml-1"></i>
+                نظام آمن وموثوق
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // معالجة نموذج تسجيل الدخول
+        document.getElementById('agent-login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const agentId = formData.get('agent_id');
+            const password = formData.get('password');
+            
+            if (!agentId || !password) {
+                alert('يرجى إدخال معرف المندوب وكلمة المرور');
+                return;
+            }
+            
+            // محاكاة تسجيل الدخول
+            if (agentId === 'demo_agent' && password === 'demo123') {
+                window.location.href = '/agent/dashboard?agent_id=' + agentId;
+            } else {
+                // في الواقع، هنا يجب التحقق من قاعدة البيانات
+                alert('بيانات الدخول غير صحيحة');
+            }
+        });
+        
+        // الدخول السريع برابط
+        function useQuickLink() {
+            const link = document.getElementById('quick-link').value;
+            
+            if (link) {
+                // استخراج معرف المندوب من الرابط
+                const urlParams = new URLSearchParams(new URL(link).search);
+                const agentId = urlParams.get('agent_id');
+                
+                if (agentId) {
+                    window.location.href = '/agent/dashboard?agent_id=' + agentId;
+                } else {
+                    alert('رابط غير صحيح');
+                }
+            } else {
+                alert('يرجى إدخال الرابط');
+            }
+        }
+        
+        // التحقق من وجود معرف المندوب في الرابط
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const agentId = urlParams.get('agent_id');
+            
+            if (agentId) {
+                document.getElementById('agent-id').value = agentId;
+                document.getElementById('password').focus();
+            } else {
+                document.getElementById('agent-id').focus();
+            }
+        });
+    </script>
+</body>
+</html>
