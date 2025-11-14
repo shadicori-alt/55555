@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>بسم الله - نظام التواصل الذكي</title>
+  <title>بسم الله - بوت التواصل الذكي</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,29 +11,27 @@
     .page { display: none; }
     .page.active { display: block; }
     .chat-bubble { max-width: 80%; padding: 10px 15px; border-radius: 20px; margin: 5px 0; }
-    .user { background: #3B82F6; color: white; align-self: flex-end; }
+    .user { background: #1E40AF; color: white; align-self: flex-end; }
     .ai { background: #E5E7EB; color: #1F2937; align-self: flex-start; }
-    .dark { background: #1f2937; color: white; }
-    .dark .bg-white { background: #374151; }
-    .dark .text-gray-800 { color: #e5e7eb; }
+    .dark { background: #111827; color: #F3F4F6; }
+    .dark .bg-white { background: #1F2937; }
     .typing { opacity: 0.7; font-style: italic; }
+    .btn-quick { @apply bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs; }
   </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50">
 
   <!-- Navbar -->
-  <nav class="bg-blue-600 text-white p-4 shadow-lg sticky top-0 z-40">
+  <nav class="bg-gradient-to-r from-blue-800 to-purple-700 text-white p-4 shadow-xl sticky top-0 z-50">
     <div class="container mx-auto flex justify-between items-center">
-      <h1 class="text-xl font-bold">بسم الله</h1>
-      <div class="flex gap-2 md:gap-4 flex-wrap text-sm md:text-base">
+      <h1 class="text-xl font-bold">بسم الله - البوت الذكي</h1>
+      <div class="flex gap-2 md:gap-4 flex-wrap text-sm">
         <button onclick="showPage('home')" class="hover:underline">الرئيسية</button>
-        <button onclick="showPage('orders')" class="hover:underline">الطلبات</button>
+        <button onclick="showPage('bot')" class="hover:underline">البوت</button>
+        <button onclick="showPage('facebook')" class="hover:underline">فيسبوك</button>
+        <button onclick="showPage('whatsapp')" class="hover:underline">واتساب</button>
         <button onclick="showPage('agents')" class="hover:underline">المناديب</button>
-        <button onclick="showPage('products')" class="hover:underline">المنتجات</button>
-        <button onclick="showPage('reports')" class="hover:underline">التقارير</button>
-        <button onclick="showPage('messages')" class="hover:underline">الرسائل</button>
-        <button onclick="showPage('ai')" class="hover:underline">الذكاء</button>
-        <button onclick="showPage('settings')" class="hover:underline">الإعدادات</button>
+        <button onclick="showPage('links')" class="hover:underline">الارتباطات</button>
         <button id="theme-btn" class="hover:underline"><i class="fas fa-moon"></i></button>
       </div>
     </div>
@@ -44,322 +42,233 @@
 
     <!-- Home -->
     <div id="home" class="page active">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-xl shadow-md text-center">
-          <i class="fas fa-shopping-cart text-4xl text-blue-600 mb-2"></i>
-          <h3 id="total-orders" class="text-2xl font-bold">0</h3>
-          <p>طلبات اليوم</p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-xl shadow-lg text-center">
+          <i class="fab fa-whatsapp text-5xl text-green-600 mb-3"></i>
+          <h3 id="wa-sent" class="text-3xl font-bold">0</h3>
+          <p>رسائل واتساب</p>
         </div>
-        <div class="bg-white p-6 rounded-xl shadow-md text-center">
-          <i class="fas fa-users text-4xl text-green-600 mb-2"></i>
-          <h3 id="active-agents" class="text-2xl font-bold">0</h3>
-          <p>مناديب نشطين</p>
+        <div class="bg-white p-6 rounded-xl shadow-lg text-center">
+          <i class="fab fa-facebook text-5xl text-blue-600 mb-3"></i>
+          <h3 id="fb-replies" class="text-3xl font-bold">0</h3>
+          <p>ردود فيسبوك</p>
         </div>
-        <div class="bg-white p-6 rounded-xl shadow-md text-center">
-          <i class="fas fa-chart-line text-4xl text-purple-600 mb-2"></i>
-          <h3 id="total-sales" class="text-2xl font-bold">ج.م 0</h3>
-          <p>المبيعات</p>
+        <div class="bg-white p-6 rounded-xl shadow-lg text-center">
+          <i class="fas fa-robot text-5xl text-purple-600 mb-3"></i>
+          <h3 id="ai-res" class="text-3xl font-bold">0</h3>
+          <p>ردود ذكية</p>
         </div>
       </div>
     </div>
 
-    <!-- Orders -->
-    <div id="orders" class="page">
-      <div class="bg-white p-6 rounded-xl shadow-md">
-        <div class="flex justify-between mb-4">
-          <h2 class="text-xl font-bold">الطلبات</h2>
-          <button onclick="addOrder()" class="bg-blue-600 text-white px-4 py-2 rounded">+ طلب جديد</button>
+    <!-- Bot Control -->
+    <div id="bot" class="page">
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h2 class="text-xl font-bold mb-4">لوحة تحكم البوت</h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block font-semibold">رسالة الترحيب</label>
+            <textarea id="welcome-msg" class="w-full p-3 border rounded-lg" placeholder="مرحبا! كيف يمكنني مساعدتك؟"></textarea>
+          </div>
+          <div>
+            <label class="block font-semibold">الرد التلقائي عند التأخير</label>
+            <textarea id="delay-msg" class="w-full p-3 border rounded-lg" placeholder="عذراً على التأخير، الطلب في الطريق"></textarea>
+          </div>
+          <div>
+            <label class="block font-semibold">أزرار الرد السريع</label>
+            <div id="quick-buttons" class="flex flex-wrap gap-2"></div>
+            <input id="new-btn" type="text" placeholder="أضف زر..." class="w-full p-2 border rounded-lg mt-2">
+            <button onclick="addQuickButton()" class="bg-blue-600 text-white px-4 py-2 rounded mt-2">+ أضف</button>
+          </div>
+          <button onclick="saveBotSettings()" class="w-full bg-green-600 text-white py-2 rounded">حفظ الإعدادات</button>
         </div>
-        <input type="text" placeholder="ابحث..." class="w-full p-3 border rounded-lg mb-4" onkeyup="filterTable('orders-table', this.value)">
-        <table id="orders-table" class="w-full">
-          <thead class="bg-gray-200"><tr><th>رقم</th><th>العميل</th><th>الحالة</th><th>السعر</th><th>إجراء</th></tr></thead>
-          <tbody></tbody>
-        </table>
+      </div>
+    </div>
+
+    <!-- Facebook Comments -->
+    <div id="facebook" class="page">
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h2 class="text-xl font-bold mb-4">رد على تعليقات فيسبوك</h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block font-semibold">رابط المنشور</label>
+            <input id="post-url" type="url" class="w-full p-3 border rounded-lg" placeholder="https://facebook.com/...">
+          </div>
+          <div id="comments-list" class="space-y-3"></div>
+          <button onclick="loadComments()" class="bg-blue-600 text-white px-4 py-2 rounded">تحميل التعليقات</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WhatsApp -->
+    <div id="whatsapp" class="page">
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h2 class="text-xl font-bold mb-4">إرسال رسائل واتساب</h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block font-semibold">رقم المندوب</label>
+            <input id="wa-number" type="tel" class="w-full p-3 border rounded-lg" placeholder="201234567890">
+          </div>
+          <div>
+            <label class="block font-semibold">الرسالة</label>
+            <textarea id="wa-msg" class="w-full p-3 border rounded-lg" placeholder="تذكير: طلب #123 في انتظار التسليم"></textarea>
+          </div>
+          <button onclick="sendWhatsApp()" class="bg-green-600 text-white px-4 py-2 rounded">إرسال</button>
+        </div>
       </div>
     </div>
 
     <!-- Agents -->
     <div id="agents" class="page">
-      <div class="bg-white p-6 rounded-xl shadow-md">
-        <div class="flex justify-between mb-4">
-          <h2 class="text-xl font-bold">المناديب</h2>
-          <button onclick="addAgent()" class="bg-blue-600 text-white px-4 py-2 rounded">+ مندوب</button>
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h2 class="text-xl font-bold mb-4">تذكير المناديب</h2>
+        <div id="agents-list" class="space-y-3"></div>
+        <button onclick="addAgentReminder()" class="bg-blue-600 text-white px-4 py-2 rounded mt-4">+ تذكير جديد</button>
+      </div>
+    </div>
+
+    <!-- Links -->
+    <div id="links" class="page">
+      <div class="bg-white p-6 rounded-xl shadow-lg">
+        <h2 class="text-xl font-bold mb-4">الارتباطات</h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block font-semibold">WhatsApp (Twilio SID)</label>
+            <input id="twilio-sid" type="text" class="w-full p-3 border rounded-lg">
+          </div>
+          <div>
+            <label class="block font-semibold">WhatsApp Token</label>
+            <input id="twilio-token" type="password" class="w-full p-3 border rounded-lg">
+          </div>
+          <div>
+            <label class="block font-semibold">Facebook Page Token</label>
+            <input id="fb-token" type="password" class="w-full p-3 border rounded-lg">
+          </div>
+          <div>
+            <label class="block font-semibold">Grok API Key</label>
+            <input id="grok-key" type="password" class="w-full p-3 border rounded-lg">
+          </div>
+          <button onclick="saveLinks()" class="w-full bg-green-600 text-white py-2 rounded">حفظ</button>
         </div>
-        <div id="agents-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-      </div>
-    </div>
-
-    <!-- Products -->
-    <div id="products" class="page">
-      <div class="bg-white p-6 rounded-xl shadow-md">
-        <div class="flex justify-between mb-4">
-          <h2 class="text-xl font-bold">المنتجات</h2>
-          <button onclick="addProduct()" class="bg-blue-600 text-white px-4 py-2 rounded">+ منتج</button>
-        </div>
-        <div id="products-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-      </div>
-    </div>
-
-    <!-- Reports -->
-    <div id="reports" class="page">
-      <div class="bg-white p-6 rounded-xl shadow-md">
-        <h2 class="text-xl font-bold mb-4">التقارير</h2>
-        <canvas id="salesChart" height="100"></canvas>
-      </div>
-    </div>
-
-    <!-- Messages -->
-    <div id="messages" class="page">
-      <div class="bg-white p-6 rounded-xl shadow-md">
-        <h2 class="text-xl font-bold mb-4">الرسائل</h2>
-        <div id="messages-list" class="space-y-4"></div>
-      </div>
-    </div>
-
-    <!-- AI -->
-    <div id="ai" class="page">
-      <div class="bg-white p-6 rounded-xl shadow-md">
-        <h2 class="text-xl font-bold mb-4">إعدادات Grok</h2>
-        <input id="api-key" type="password" placeholder="xai-..." class="w-full p-3 border rounded-lg mb-2">
-        <button onclick="saveAPIKey()" class="w-full bg-blue-600 text-white py-2 rounded-lg mb-2">حفظ</button>
-        <input id="test-prompt" type="text" placeholder="اكتب سؤال..." class="w-full p-3 border rounded-lg mb-2">
-        <button onclick="testAPI()" class="w-full bg-green-600 text-white py-2 rounded-lg">اختبار</button>
-        <div id="test-result" class="mt-4 p-3 bg-gray-100 rounded-lg hidden"></div>
-      </div>
-    </div>
-
-    <!-- Settings -->
-    <div id="settings" class="page">
-      <div class="bg-white p-6 rounded-xl shadow-md">
-        <h2 class="text-xl font-bold mb-4">الإعدادات</h2>
-        <button onclick="exportData()" class="bg-green-600 text-white px-4 py-2 rounded">تصدير البيانات</button>
-        <button onclick="clearData()" class="bg-red-600 text-white px-4 py-2 rounded ml-2">مسح الكل</button>
       </div>
     </div>
   </div>
 
   <!-- Chat -->
-  <button id="chat-toggle" class="fixed bottom-6 left-6 bg-blue-600 text-white p-4 rounded-full shadow-lg z-50">
-    <i class="fas fa-robot text-xl"></i>
-    <span id="notif" class="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full hidden"></span>
+  <button id="chat-toggle" class="fixed bottom-6 left-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-5 rounded-full shadow-2xl z-50">
+    <i class="fas fa-robot text-2xl"></i>
   </button>
-  <div id="chat-window" class="fixed bottom-20 left-6 w-80 bg-white rounded-xl shadow-xl hidden flex flex-col z-50">
-    <div class="bg-blue-600 text-white p-4 rounded-t-xl flex justify-between">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 bg-gray-300 rounded-full"></div>
-        <div><p class="font-bold">Grok</p><p class="text-xs">متصل</p></div>
-      </div>
-      <button id="close-chat" class="text-white"><i class="fas fa-times"></i></button>
-    </div>
+  <div id="chat-window" class="fixed bottom-24 left-6 w-80 bg-white rounded-2xl shadow-2xl hidden flex flex-col z-50">
+    <div class="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-t-2xl">المساعد الذكي</div>
     <div id="chat-messages" class="flex-1 p-4 overflow-y-auto"></div>
     <div class="p-4 border-t">
       <div class="flex gap-2">
-        <input id="chat-input" type="text" placeholder="اكتب..." class="flex-1 p-2 border rounded-lg">
-        <button id="send-btn" class="bg-blue-600 text-white p-2 rounded-lg"><i class="fas fa-paper-plane"></i></button>
+        <input id="chat-input" type="text" placeholder="اكتب..." class="flex-1 p-3 border rounded-lg text-sm">
+        <button id="send-btn" class="bg-blue-600 text-white p-3 rounded-lg"><i class="fas fa-paper-plane"></i></button>
       </div>
     </div>
   </div>
 
   <!-- JavaScript -->
   <script>
-    // Data
-    let orders = JSON.parse(localStorage.getItem('orders')) || [];
-    let agents = JSON.parse(localStorage.getItem('agents')) || [];
-    let products = JSON.parse(localStorage.getItem('products')) || [];
-    let messages = JSON.parse(localStorage.getItem('messages')) || [];
+    // Load Settings
+    const settings = JSON.parse(localStorage.getItem('bot_settings')) || {
+      welcome: "مرحبا! كيف يمكنني مساعدتك؟",
+      delay: "عذراً على التأخير",
+      quick_buttons: ["تتبع الطلب", "الدفع", "إلغاء"],
+      links: {}
+    };
 
     // Save
-    function save() {
-      localStorage.setItem('orders', JSON.stringify(orders));
-      localStorage.setItem('agents', JSON.stringify(agents));
-      localStorage.setItem('products', JSON.stringify(products));
-      localStorage.setItem('messages', JSON.stringify(messages));
-      updateDashboard();
-    }
-
-    // Dashboard
-    function updateDashboard() {
-      document.getElementById('total-orders').textContent = orders.length;
-      document.getElementById('active-agents').textContent = agents.filter(a => a.status === 'نشط').length;
-      document.getElementById('total-sales').textContent = `ج.م ${orders.reduce((s, o) => s + o.price, 0)}`;
+    function saveAll() {
+      localStorage.setItem('bot_settings', JSON.stringify(settings));
     }
 
     // Page
     function showPage(id) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.getElementById(id).classList.add('active');
-      if (id === 'orders') renderOrders();
-      if (id === 'agents') renderAgents();
-      if (id === 'products') renderProducts();
-      if (id === 'messages') renderMessages();
-      if (id === 'reports') renderChart();
     }
 
-    // Orders
-    function renderOrders() {
-      const tbody = document.querySelector('#orders-table tbody');
-      tbody.innerHTML = '';
-      orders.forEach((o, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="p-2">${o.id}</td>
-          <td class="p-2">${o.client}</td>
-          <td class="p-2">
-            <select onchange="updateOrder(${i}, 'status', this.value)" class="p-1 border rounded">
-              <option ${o.status==='جديد'?'selected':''}>جديد</option>
-              <option ${o.status==='قيد التنفيذ'?'selected':''}>قيد التنفيذ</option>
-              <option ${o.status==='تم التسليم'?'selected':''}>تم التسليم</option>
-            </select>
-          </td>
-          <td class="p-2">${o.price}</td>
-          <td class="p-2"><button onclick="deleteOrder(${i})" class="text-red-600">حذف</button></td>
-        `;
-        tbody.appendChild(tr);
+    // Bot Settings
+    document.getElementById('welcome-msg').value = settings.welcome;
+    document.getElementById('delay-msg').value = settings.delay;
+    function renderQuickButtons() {
+      const container = document.getElementById('quick-buttons');
+      container.innerHTML = '';
+      settings.quick_buttons.forEach((btn, i) => {
+        const span = document.createElement('span');
+        span.className = 'btn-quick';
+        span.textContent = btn;
+        span.onclick = () => { settings.quick_buttons.splice(i,1); saveAll(); renderQuickButtons(); };
+        container.appendChild(span);
       });
     }
-    function addOrder() {
-      const client = prompt('اسم العميل:');
-      const price = parseInt(prompt('السعر:'));
-      if (client && price) {
-        orders.push({ id: orders.length + 1, client, status: 'جديد', price });
-        save(); renderOrders();
+    function addQuickButton() {
+      const txt = document.getElementById('new-btn').value.trim();
+      if (txt) {
+        settings.quick_buttons.push(txt);
+        document.getElementById('new-btn').value = '';
+        saveAll(); renderQuickButtons();
       }
     }
-    function updateOrder(i, key, val) { orders[i][key] = val; save(); }
-    function deleteOrder(i) { if (confirm('حذف؟')) { orders.splice(i,1); save(); renderOrders(); }}
+    function saveBotSettings() {
+      settings.welcome = document.getElementById('welcome-msg').value;
+      settings.delay = document.getElementById('delay-msg').value;
+      saveAll(); alert('تم الحفظ');
+    }
+    renderQuickButtons();
 
-    // Agents
-    function renderAgents() {
-      const list = document.getElementById('agents-list');
-      list.innerHTML = '';
-      agents.forEach((a, i) => {
-        const div = document.createElement('div');
-        div.className = 'p-4 border rounded-lg text-center';
-        div.innerHTML = `
-          <div class="w-16 h-16 bg-gray-300 rounded-full mx-auto mb-2"></div>
-          <p class="font-semibold">${a.name}</p>
-          <p class="text-sm ${a.status==='نشط'?'text-green-600':'text-red-600'}">${a.status}</p>
-          <button onclick="toggleAgent(${i})" class="text-xs bg-blue-600 text-white px-2 py-1 rounded mt-2">
-            ${a.status==='نشط'?'إيقاف':'تفعيل'}
-          </button>
-        `;
-        list.appendChild(div);
-      });
-    }
-    function addAgent() {
-      const name = prompt('اسم المندوب:');
-      if (name) { agents.push({ name, status: 'نشط' }); save(); renderAgents(); }
-    }
-    function toggleAgent(i) {
-      agents[i].status = agents[i].status === 'نشط' ? 'غير نشط' : 'نشط';
-      save(); renderAgents();
-    }
-
-    // Products
-    function renderProducts() {
-      const list = document.getElementById('products-list');
-      list.innerHTML = '';
-      products.forEach((p, i) => {
-        const div = document.createElement('div');
-        div.className = 'p-4 border rounded-lg';
-        div.innerHTML = `
-          <h3 class="font-semibold">${p.name}</h3>
-          <p>السعر: ${p.price} ج.م</p>
-          <p>المخزون: ${p.stock}</p>
-          <button onclick="deleteProduct(${i})" class="text-red-600 text-xs">حذف</button>
-        `;
-        list.appendChild(div);
-      });
-    }
-    function addProduct() {
-      const name = prompt('اسم المنتج:');
-      const price = prompt('السعر:');
-      const stock = prompt('المخزون:');
-      if (name && price && stock) {
-        products.push({ name, price: parseInt(price), stock: parseInt(stock) });
-        save(); renderProducts();
-      }
-    }
-    function deleteProduct(i) { if (confirm('حذف؟')) { products.splice(i,1); save(); renderProducts(); }}
-
-    // Messages
-    function renderMessages() {
-      const list = document.getElementById('messages-list');
-      list.innerHTML = '';
-      messages.forEach((m, i) => {
-        const div = document.createElement('div');
-        div.className = 'p-3 border rounded-lg';
-        div.innerHTML = `
-          <p class="font-semibold">${m.client}: ${m.text}</p>
-          <p class="text-xs text-gray-500">${m.source} • ${m.time}</p>
-          <textarea placeholder="الرد..." class="w-full p-2 border rounded mt-2"></textarea>
-          <button onclick="sendReply(${i})" class="bg-blue-600 text-white px-3 py-1 rounded text-xs mt-1">إرسال</button>
-        `;
-        list.appendChild(div);
-      });
-    }
-    function sendReply(i) {
-      const textarea = document.querySelectorAll('textarea')[i];
-      const reply = textarea.value;
-      if (reply) {
-        alert(`تم إرسال: "${reply}" إلى ${messages[i].client}`);
-        textarea.value = '';
-      }
-    }
-
-    // Reports
-    function renderChart() {
-      const ctx = document.getElementById('salesChart');
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ['الأسبوع 1', 'الأسبوع 2', 'الأسبوع 3'],
-          datasets: [{ label: 'المبيعات', data: [12000, 19000, 45200], backgroundColor: '#3B82F6' }]
-        }
-      });
-    }
-
-    // Export / Clear
-    function exportData() {
-      const data = { orders, agents, products, messages };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'backup.json'; a.click();
-    }
-    function clearData() {
-      if (confirm('مسح كل البيانات؟')) {
-        orders = []; agents = []; products = []; messages = [];
-        save();
-        alert('تم المسح');
-      }
-    }
-
-    // Grok API
-    const GROK_URL = "https://api.x.ai/v1/chat/completions";
-    async function callGrok(prompt) {
-      const key = localStorage.getItem('grok_key');
-      if (!key) throw new Error("احفظ المفتاح في صفحة الذكاء");
-      const res = await fetch(GROK_URL, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
-        body: JSON.stringify({ model: "grok-beta", messages: [{ role: "user", content: prompt }], temperature: 0.7 })
-      });
-      if (!res.ok) throw new Error("فشل الاتصال");
-      const data = await res.json();
-      return data.choices[0].message.content;
-    }
-    function saveAPIKey() {
-      const key = document.getElementById('api-key').value.trim();
-      if (key) { localStorage.setItem('grok_key', key); alert('تم الحفظ'); }
-    }
-    async function testAPI() {
-      const prompt = document.getElementById('test-prompt').value;
-      const result = document.getElementById('test-result');
-      if (!prompt) return;
-      result.classList.remove('hidden'); result.innerHTML = 'جاري...';
+    // WhatsApp
+    async function sendWhatsApp() {
+      const num = document.getElementById('wa-number').value;
+      const msg = document.getElementById('wa-msg').value;
+      if (!num || !msg) return alert('اكمل البيانات');
+      const sid = settings.links.twilio_sid;
+      const token = settings.links.twilio_token;
+      if (!sid || !token) return alert('اربط Twilio في الارتباطات');
       try {
-        const res = await callGrok(prompt);
-        result.innerHTML = `<p class="font-bold">الرد:</p><p>${res}</p>`;
-      } catch (e) { result.innerHTML = `<p class="text-red-600">${e.message}</p>`; }
+        await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Basic ' + btoa(sid + ':' + token),
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({
+            To: `whatsapp:${num}`,
+            From: 'whatsapp:+14155238886',
+            Body: msg
+          })
+        });
+        alert('تم الإرسال!');
+        document.getElementById('wa-sent').textContent = parseInt(document.getElementById('wa-sent').textContent) + 1;
+      } catch (e) { alert('فشل: ' + e.message); }
+    }
+
+    // Facebook Comments
+    function loadComments() {
+      const url = document.getElementById('post-url').value;
+      if (!url.includes('facebook.com')) return alert('رابط غير صالح');
+      const list = document.getElementById('comments-list');
+      list.innerHTML = '<p class="text-blue-600">جاري التحميل...</p>';
+      setTimeout(() => {
+        list.innerHTML = `
+          <div class="p-3 border rounded">
+            <p class="font-semibold">أحمد: متى التوصيل؟</p>
+            <textarea class="w-full p-2 border rounded mt-2" placeholder="الرد..."></textarea>
+            <button class="bg-blue-600 text-white px-3 py-1 rounded text-xs mt-1">إرسال</button>
+          </div>
+        `;
+      }, 1000);
+    }
+
+    // Links
+    function saveLinks() {
+      settings.links.twilio_sid = document.getElementById('twilio-sid').value;
+      settings.links.twilio_token = document.getElementById('twilio-token').value;
+      settings.links.fb_token = document.getElementById('fb-token').value;
+      settings.links.grok_key = document.getElementById('grok-key').value;
+      saveAll(); alert('تم الحفظ');
     }
 
     // Chat
@@ -369,12 +278,16 @@
     const chatMessages = document.getElementById('chat-messages');
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
-    const notif = document.getElementById('notif');
 
-    chatToggle.onclick = () => { chatWindow.classList.toggle('hidden'); notif.classList.add('hidden'); };
+    chatToggle.onclick = () => chatWindow.classList.toggle('hidden');
     closeChat.onclick = () => chatWindow.classList.add('hidden');
-    sendBtn.onclick = sendMessage;
-    chatInput.addEventListener('keypress', e => e.key === 'Enter' && sendMessage());
+    sendBtn.onclick = () => {
+      const msg = chatInput.value.trim();
+      if (!msg) return;
+      addMsg(msg, 'user');
+      chatInput.value = '';
+      setTimeout(() => addMsg('تم الرد تلقائيًا!', 'ai'), 1000);
+    };
 
     function addMsg(text, type) {
       const div = document.createElement('div');
@@ -382,36 +295,10 @@
       div.textContent = text;
       chatMessages.appendChild(div);
       chatMessages.scrollTop = chatMessages.scrollHeight;
-      return div;
-    }
-    async function sendMessage() {
-      const msg = chatInput.value.trim();
-      if (!msg) return;
-      addMsg(msg, 'user');
-      chatInput.value = '';
-      const typing = addMsg('يكتب...', 'ai'); typing.classList.add('typing');
-      try {
-        const res = await callGrok(msg);
-        typing.remove();
-        addMsg(res, 'ai');
-      } catch (e) {
-        typing.remove();
-        addMsg('خطأ: ' + e.message, 'ai');
-      }
     }
 
     // Init
-    save(); updateDashboard(); showPage('home');
-    setTimeout(() => notif.classList.remove('hidden'), 3000);
-
-    // Sample Data
-    if (!orders.length) {
-      orders = [{id:1,client:"محمد",status:"قيد التنفيذ",price:450}];
-      agents = [{name:"أحمد",status:"نشط"}];
-      products = [{name:"هاتف",price:5000,stock:10}];
-      messages = [{client:"علي",text:"متى التوصيل؟",source:"واتساب",time:"منذ 5 دقائق"}];
-      save();
-    }
+    showPage('home');
   </script>
 </body>
 </html>
