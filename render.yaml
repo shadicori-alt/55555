@@ -4,4 +4,9 @@ services:
     env: node
     buildCommand: npm install
     startCommand: node server.js
+    envVars:
+      - key: FB_APP_ID
+        sync: false
+      - key: FB_APP_SECRET
+        sync: false
     plan: free
