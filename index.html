@@ -1,211 +1,302 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة التواصل الذكي</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        body {
-            font-family: 'Cairo', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        
-        .hero-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .feature-card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بسم الله - نظام التواصل الذكي</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .chat-bubble { max-width: 80%; padding: 10px 15px; border-radius: 20px; margin: 5px 0; }
+    .user { background: #3B82F6; color: white; align-self: flex-end; }
+    .ai { background: #E5E7EB; color: #1F2937; align-self: flex-start; }
+    #chat-window { transition: all 0.3s; height: 500px; }
+    .dark { background: #1f2937; color: white; }
+    .dark .bg-white { background: #374151; }
+    .dark .text-gray-800 { color: #e5e7eb; }
+    .dark .border-gray-200 { border-color: #4b5563; }
+    .typing { opacity: 0.7; font-style: italic; }
+  </style>
 </head>
-<body class="flex items-center justify-center p-4">
-    <div class="max-w-6xl mx-auto">
-        <!-- الهيدر -->
-        <div class="hero-card rounded-3xl shadow-2xl p-8 mb-8 text-center">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mb-6">
-                <i class="fas fa-robot text-3xl text-white"></i>
-            </div>
-            
-            <h1 class="text-4xl font-bold text-gray-800 mb-4">
-                نظام إدارة التواصل الذكي
-            </h1>
-            
-            <p class="text-xl text-gray-600 mb-8 leading-relaxed">
-                نظام متكامل لإدارة التواصل مع العملاء عبر multiple قنوات<br>
-                مع دعم الذكاء الاصطناعي للردود التلقائية
-            </p>
-            
-            <div class="flex flex-wrap justify-center gap-4">
-                <a href="/admin/dashboard" class="btn-primary text-white px-8 py-4 rounded-xl font-bold text-lg">
-                    <i class="fas fa-cog ml-2"></i>
-                    لوحة التحكم
-                </a>
-                <a href="/agent" class="bg-white text-gray-800 border-2 border-gray-300 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-50">
-                    <i class="fas fa-mobile-alt ml-2"></i>
-                    تطبيق المندوب
-                </a>
-            </div>
-        </div>
+<body class="bg-gray-100">
 
-        <!-- المميزات -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <div class="feature-card p-6 text-center">
-                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-comments text-2xl text-blue-600"></i>
-                </div>
-                <h3 class="text-xl font-bold text-gray-800 mb-2">إدارة متعددة القنوات</h3>
-                <p class="text-gray-600">فيسبوك، واتساب، الماسنجر في مكان واحد</p>
-            </div>
-
-            <div class="feature-card p-6 text-center">
-                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-robot text-2xl text-green-600"></i>
-                </div>
-                <h3 class="text-xl font-bold text-gray-800 mb-2">ذكاء اصطناعي متقدم</h3>
-                <p class="text-gray-600">ردود تلقائية ذكية وتحليل المشاعر</p>
-            </div>
-
-            <div class="feature-card p-6 text-center">
-                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-mobile-alt text-2xl text-purple-600"></i>
-                </div>
-                <h3 class="text-xl font-bold text-gray-800 mb-2">تطبيق موبايل</h3>
-                <p class="text-gray-600">واجهة مخصصة للمناديب مع إشعارات فورية</p>
-            </div>
-
-            <div class="feature-card p-6 text-center">
-                <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-chart-bar text-2xl text-orange-600"></i>
-                </div>
-                <h3 class="text-xl font-bold text-gray-800 mb-2">تقارير وإحصائيات</h3>
-                <p class="text-gray-600">متابعة الأداء ومزامنة مع Google Sheets</p>
-            </div>
-
-            <div class="feature-card p-6 text-center">
-                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-shield-alt text-2xl text-red-600"></i>
-                </div>
-                <h3 class="text-xl font-bold text-gray-800 mb-2">أمان متقدم</h3>
-                <p class="text-gray-600">حماية كاملة للبيانات والخصوصية</p>
-            </div>
-
-            <div class="feature-card p-6 text-center">
-                <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-cogs text-2xl text-indigo-600"></i>
-                </div>
-                <h3 class="text-xl font-bold text-gray-800 mb-2">تخصيص كامل</h3>
-                <p class="text-gray-600">إعدادات مرنة وتكامل مع خدمات متعددة</p>
-            </div>
-        </div>
-
-        <!-- معلومات التثبيت -->
-        <div class="hero-card rounded-3xl shadow-2xl p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">بداية سريعة</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-blue-50 rounded-xl p-6">
-                    <h3 class="text-lg font-bold text-blue-800 mb-4">
-                        <i class="fas fa-user-shield ml-2"></i>
-                        للمسؤول
-                    </h3>
-                    <ul class="space-y-2 text-sm text-blue-700">
-                        <li><i class="fas fa-check ml-2"></i>لوحة تحكم متكاملة</li>
-                        <li><i class="fas fa-check ml-2"></i>إدارة الخدمات والمناديب</li>
-                        <li><i class="fas fa-check ml-2"></i>تقارير مفصلة وإحصائيات</li>
-                        <li><i class="fas fa-check ml-2"></i>تحكم كامل بالإعدادات</li>
-                    </ul>
-                </div>
-
-                <div class="bg-green-50 rounded-xl p-6">
-                    <h3 class="text-lg font-bold text-green-800 mb-4">
-                        <i class="fas fa-motorcycle ml-2"></i>
-                        للمندوب
-                    </h3>
-                    <ul class="space-y-2 text-sm text-green-700">
-                        <li><i class="fas fa-check ml-2"></i>تطبيق موبايل متجاوب</li>
-                        <li><i class="fas fa-check ml-2"></i>إشعارات فورية بالطلبات</li>
-                        <li><i class="fas fa-check ml-2"></i>إدارة سهلة للطلبات</li>
-                        <li><i class="fas fa-check ml-2"></i>إحصائيات شخصية</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="mt-6 text-center">
-                <p class="text-gray-600 mb-4">
-                    <i class="fas fa-info-circle ml-2"></i>
-                    نظام مصري متكامل مع دعم كامل للسوق المصري واللغة المحلية
-                </p>
-                
-                <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
-                    <div class="bg-blue-50 p-3 rounded-lg">
-                        <h4 class="font-bold text-blue-800 mb-2">مميزات مصرية</h4>
-                        <ul class="space-y-1 text-blue-700">
-                            <li>• أسعار بالجنيه المصري</li>
-                            <li>• مناطق توصيل مصرية</li>
-                            <li>• طرق دفع محلية</li>
-                            <li>• لغة عاملية مصرية</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="bg-green-50 p-3 rounded-lg">
-                        <h4 class="font-bold text-green-800 mb-2">ذكاء اصطناعي متقدم</h4>
-                        <ul class="space-y-1 text-green-700">
-                            <li>• سياقات متعددة</li>
-                            <li>• تكامل Shopify</li>
-                            <li>• تقارير تلقائية</li>
-                            <li>• مساعد ذكي عائم</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="flex flex-wrap justify-center gap-2 text-sm">
-                    <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
-                        <i class="fab fa-facebook ml-1"></i> فيسبوك
-                    </span>
-                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full">
-                        <i class="fab fa-whatsapp ml-1"></i> واتساب
-                    </span>
-                    <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full">
-                        <i class="fab fa-google ml-1"></i> جوجل شيتس
-                    </span>
-                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full">
-                        <i class="fas fa-robot ml-1"></i> OpenAI
-                    </span>
-                </div>
-            </div>
-        </div>
+  <!-- Navbar -->
+  <nav class="bg-blue-600 text-white p-4 shadow-lg sticky top-0 z-40">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold">بسم الله</h1>
+      <div class="flex gap-4 items-center flex-wrap">
+        <button onclick="showPage('home')" class="hover:underline">الرئيسية</button>
+        <button onclick="showPage('orders')" class="hover:underline">الطلبات</button>
+        <button onclick="showPage('agents')" class="hover:underline">المناديب</button>
+        <button onclick="showPage('products')" class="hover:underline">المنتجات</button>
+        <button onclick="showPage('reports')" class="hover:underline">التقارير</button>
+        <button onclick="showPage('messages')" class="hover:underline">الرسائل</button>
+        <button onclick="showPage('ai')" class="hover:underline">الذكاء</button>
+        <button onclick="showPage('settings')" class="hover:underline">الإعدادات</button>
+        <button id="theme-btn" class="hover:underline"><i class="fas fa-moon"></i></button>
+      </div>
     </div>
+  </nav>
+
+  <!-- Pages Container -->
+  <div class="container mx-auto mt-8 px-4">
+
+    <!-- Home Page -->
+    <div id="home" class="page active">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-xl shadow-md text-center">
+          <i class="fas fa-shopping-cart text-4xl text-blue-600 mb-2"></i>
+          <h3 class="text-2xl font-bold">156</h3>
+          <p>طلبات اليوم</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-md text-center">
+          <i class="fas fa-users text-4xl text-green-600 mb-2"></i>
+          <h3 class="text-2xl font-bold">12</h3>
+          <p>مناديب نشطين</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-md text-center">
+          <i class="fas fa-chart-line text-4xl text-purple-600 mb-2"></i>
+          <h3 class="text-2xl font-bold">ج.م 45,200</h3>
+          <p>المبيعات</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orders Page -->
+    <div id="orders" class="page">
+      <div class="bg-white p-6 rounded-xl shadow-md">
+        <h2 class="text-xl font-bold mb-4">إدارة الطلبات</h2>
+        <input type="text" id="search-orders" placeholder="ابحث..." class="w-full p-3 border rounded-lg mb-4" onkeyup="filterTable('orders-table', this.value)">
+        <table id="orders-table" class="w-full">
+          <thead class="bg-gray-200"><tr><th class="p-2">رقم</th><th>العميل</th><th>الحالة</th><th>التاريخ</th><th>إجراء</th></tr></thead>
+          <tbody>
+            <tr><td class="p-2">123</td><td>محمد</td><td><span class="bg-yellow-200 px-2 py-1 rounded">قيد التنفيذ</span></td><td>13/11</td><td><button class="bg-green-600 text-white px-2 py-1 rounded text-xs">تعيين</button></td></tr>
+            <tr><td class="p-2">124</td><td>أحمد</td><td><span class="bg-green-200 px-2 py-1 rounded">تم التسليم</span></td><td>12/11</td><td><button class="bg-blue-600 text-white px-2 py-1 rounded text-xs">طباعة</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Agents Page -->
+    <div id="agents" class="page">
+      <div class="bg-white p-6 rounded-xl shadow-md">
+        <h2 class="text-xl font-bold mb-4">إدارة المناديب</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="text-center p-4 border rounded-lg">
+            <div class="w-16 h-16 bg-gray-300 rounded-full mx-auto mb-2"></div>
+            <p class="font-semibold">أحمد</p>
+            <p class="text-sm text-green-600">نشط</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Products Page -->
+    <div id="products" class="page">
+      <div class="bg-white p-6 rounded-xl shadow-md">
+        <h2 class="text-xl font-bold mb-4">المنتجات</h2>
+        <p>كتالوج من Shopify (سيتم الربط لاحقًا)</p>
+      </div>
+    </div>
+
+    <!-- Reports Page -->
+    <div id="reports" class="page">
+      <div class="bg-white p-6 rounded-xl shadow-md">
+        <h2 class="text-xl font-bold mb-4">التقارير والتحليلات</h2>
+        <canvas id="salesChart" height="100"></canvas>
+      </div>
+    </div>
+
+    <!-- Messages Page -->
+    <div id="messages" class="page">
+      <div class="bg-white p-6 rounded-xl shadow-md">
+        <h2 class="text-xl font-bold mb-4">الرسائل والتعليقات</h2>
+        <div class="p-3 border rounded-lg mb-2">
+          <p class="font-semibold">محمد: متى يوصل الطلب #123؟</p>
+          <p class="text-xs text-gray-500">واتساب • منذ 5 دقايق</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Settings Page -->
+    <div id="ai" class="page">
+      <div class="bg-white p-6 rounded-xl shadow-md">
+        <h2 class="text-xl font-bold mb-4">إعدادات Grok API</h2>
+        <input id="api-key" type="password" placeholder="xai-..." class="w-full p-3 border rounded-lg mb-2">
+        <button onclick="saveAPIKey()" class="w-full bg-blue-600 text-white py-2 rounded-lg mb-2">حفظ المفتاح</button>
+        <input id="test-prompt" type="text" placeholder="اكتب سؤال للاختبار..." class="w-full p-3 border rounded-lg mb-2">
+        <button onclick="testAPI()" class="w-full bg-green-600 text-white py-2 rounded-lg">اختبار الاتصال</button>
+        <div id="test-result" class="mt-4 p-3 bg-gray-100 rounded-lg hidden"></div>
+      </div>
+    </div>
+
+    <!-- Settings Page -->
+    <div id="settings" class="page">
+      <div class="bg-white p-6 rounded-xl shadow-md">
+        <h2 class="text-xl font-bold mb-4">الإعدادات العامة</h2>
+        <p>RTL • عربي كامل • نسخ احتياطي تلقائي</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Chat Button -->
+  <button id="chat-toggle" class="fixed bottom-6 left-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 z-50">
+    <i class="fas fa-robot text-xl"></i>
+    <span id="notif" class="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full hidden"></span>
+  </button>
+
+  <!-- Chat Window -->
+  <div id="chat-window" class="fixed bottom-20 left-6 w-80 bg-white rounded-xl shadow-xl hidden flex flex-col z-50 dark:bg-gray-800">
+    <div class="bg-blue-600 text-white p-4 rounded-t-xl flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-gray-300 rounded-full"></div>
+        <div><p class="font-bold">Grok</p><p class="text-xs">متصل</p></div>
+      </div>
+      <button id="close-chat" class="text-white"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="chat-messages" class="flex-1 p-4 overflow-y-auto flex flex-col gap-2"></div>
+    <div class="p-4 border-t">
+      <div class="flex gap-2">
+        <input id="chat-input" type="text" placeholder="اكتب أمرك..." class="flex-1 p-2 border rounded-lg">
+        <button id="send-btn" class="bg-blue-600 text-white p-2 rounded-lg"><i class="fas fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    // Page Navigation
+    function showPage(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      const page = document.getElementById(id);
+      if (page) page.classList.add('active');
+    }
+
+    // Theme Toggle
+    document.getElementById('theme-btn').onclick = () => {
+      document.body.classList.toggle('dark');
+      localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    };
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+
+    // Chart
+    const chartCtx = document.getElementById('salesChart');
+    if (chartCtx) {
+      new Chart(chartCtx, {
+        type: 'line',
+        data: { 
+          labels: ['يناير','فبراير','مارس','أبريل'], 
+          datasets: [{ 
+            label: 'المبيعات (ج.م)', 
+            data: [12000, 19000, 30000, 45200], 
+            borderColor: '#3B82F6',
+            tension: 0.4
+          }] 
+        }
+      });
+    }
+
+    // Search Filter
+    function filterTable(tableId, query) {
+      const rows = document.querySelectorAll(`#${tableId} tbody tr`);
+      rows.forEach(row => {
+        row.style.display = row.textContent.includes(query) ? '' : 'none';
+      });
+    }
+
+    // Grok API
+    const GROK_URL = "https://api.x.ai/v1/chat/completions";
+    async function callGrok(prompt) {
+      const key = localStorage.getItem('grok_key');
+      if (!key) throw new Error("احفظ مفتاح API أولاً في صفحة الذكاء");
+      const res = await fetch(GROK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+        body: JSON.stringify({ 
+          model: "grok-beta", 
+          messages: [
+            { role: "system", content: "أنت مساعد ذكي لنظام إدارة تواصل. رد بالعربية، كن مفيدًا وموجزًا." },
+            { role: "user", content: prompt }
+          ], 
+          temperature: 0.7 
+        })
+      });
+      if (!res.ok) throw new Error("فشل الاتصال بـ Grok");
+      const data = await res.json();
+      return data.choices[0].message.content;
+    }
+
+    // Save & Test API
+    function saveAPIKey() {
+      const key = document.getElementById('api-key').value.trim();
+      if (key) { 
+        localStorage.setItem('grok_key', key); 
+        alert('تم حفظ المفتاح! جرب الاختبار أو الدردشة.'); 
+      }
+    }
+    async function testAPI() {
+      const prompt = document.getElementById('test-prompt').value;
+      const result = document.getElementById('test-result');
+      if (!prompt) return alert('اكتب سؤال');
+      result.classList.remove('hidden'); 
+      result.innerHTML = 'جاري الاختبار...';
+      try {
+        const res = await callGrok(prompt);
+        result.innerHTML = `<p class="font-bold">الرد:</p><p>${res}</p>`;
+      } catch (e) { 
+        result.innerHTML = `<p class="text-red-600">خطأ: ${e.message}</p>`; 
+      }
+    }
+
+    // Chat System
+    const chatToggle = document.getElementById('chat-toggle');
+    const chatWindow = document.getElementById('chat-window');
+    const closeChat = document.getElementById('close-chat');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const notif = document.getElementById('notif');
+
+    chatToggle.onclick = () => { 
+      chatWindow.classList.toggle('hidden'); 
+      notif.classList.add('hidden'); 
+    };
+    closeChat.onclick = () => chatWindow.classList.add('hidden');
+    sendBtn.onclick = sendMessage;
+    chatInput.addEventListener('keypress', e => e.key === 'Enter' && sendMessage());
+
+    function addMsg(text, type) {
+      const div = document.createElement('div');
+      div.className = `chat-bubble ${type}`;
+      div.textContent = text;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      return div;
+    }
+
+    async function sendMessage() {
+      const msg = chatInput.value.trim();
+      if (!msg) return;
+      addMsg(msg, 'user');
+      chatInput.value = '';
+      const typing = addMsg('يكتب...', 'ai'); 
+      typing.classList.add('typing');
+      try {
+        const res = await callGrok(msg);
+        typing.remove();
+        addMsg(res, 'ai');
+      } catch (e) {
+        typing.remove();
+        addMsg('خطأ: ' + e.message, 'ai');
+      }
+    }
+
+    // Notification
+    setTimeout(() => notif.classList.remove('hidden'), 3000);
+  </script>
 </body>
 </html>
