@@ -1,38 +1,298 @@
-// app.js
+// app.js - النظام الكامل: الواجهة + التفاعل + البوت + التحديث الفوري
+
 let ws;
+const settings = {};
+
+// === تسجيل الدخول ===
 function login() {
-    const u = document.getElementById('username').value;
-    const p = document.getElementById('password').value;
-    fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: u, password: p }) })
-        .then(r => r.json())
-        .then(d => {
-            if (d.success) {
-                document.getElementById('login').style.display = 'none';
-                document.getElementById('app').style.display = 'block';
-                connect();
-                loadAll();
-            } else alert('خطأ في تسجيل الدخول');
-        });
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!username || !password) {
+        alert('املأ الحقول');
+        return;
+    }
+
+    fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            connectWebSocket();
+            loadAllData();
+        } else {
+            alert('خطأ: اسم المستخدم أو كلمة السر غلط');
+        }
+    })
+    .catch(() => alert('خطأ في الاتصال'));
 }
 
-function connect() {
+// === WebSocket للتحديث الفوري ===
+function connectWebSocket() {
     ws = new WebSocket(`ws://${location.host}`);
-    ws.onmessage = () => loadAll();
+
+    ws.onopen = () => console.log('WebSocket متصل');
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'new_order' || data.type === 'update_order' || data.type === 'new_message') {
+            loadAllData();
+        }
+    };
+    ws.onclose = () => setTimeout(connectWebSocket, 3000);
 }
 
-function showPage(id) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-    document.querySelector(`[data-page="${id}"]`).classList.add('active');
+// === تحميل كل البيانات ===
+async function loadAllData() {
+    try {
+        const [ordersRes, agentsRes, settingsRes] = await Promise.all([
+            fetch('/api/orders'),
+            fetch('/api/agents'),
+            fetch('/api/settings')
+        ]);
+
+        const orders = await ordersRes.json();
+        const agents = await agentsRes.json();
+        Object.assign(settings, await settingsRes.json());
+
+        renderLinks();
+        renderOrders(orders);
+        renderAgents(agents);
+        renderAccounts(orders);
+        renderWorkflow();
+    } catch (e) {
+        console.error(e);
+    }
 }
 
-async function loadAll() {
-    // تحميل كل البيانات
+// === 1. الارتباطات ===
+function renderLinks() {
+    // فيسبوك
+    const fbStatus = document.getElementById('fb-status');
+    fbStatus.textContent = settings.fb_token ? 'متصل' : 'غير متصل';
+    fbStatus.className = settings.fb_token ? 'badge bg-success ms-2' : 'badge bg-secondary ms-2';
+
+    // واتساب
+    const waStatus = document.getElementById('wa-status');
+    waStatus.textContent = settings.twilio_sid ? 'متصل' : 'غير متصل';
+    waStatus.className = settings.twilio_sid ? 'badge bg-success ms-2' : 'badge bg-secondary ms-2';
+
+    document.getElementById('twilio-sid').value = settings.twilio_sid || '';
+    document.getElementById('twilio-token').value = settings.twilio_token || '';
+    document.getElementById('gs-sheet-id').value = settings.gs_sheet_id || '';
+    document.getElementById('ai-key').value = settings.ai_key || '';
+    document.getElementById('ai-provider').value = settings.ai_provider || 'grok';
 }
 
-// باقي الـ JS (سأرسله في الرد التالي)
+// حفظ الإعدادات
+async function saveSetting(key, value) {
+    await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value })
+    });
+    settings[key] = value;
+}
+function saveTwilio() { saveSetting('twilio_sid', document.getElementById('twilio-sid').value); saveSetting('twilio_token', document.getElementById('twilio-token').value); alert('تم حفظ واتساب'); }
+function saveSheet() { saveSetting('gs_sheet_id', document.getElementById('gs-sheet-id').value); alert('تم حفظ Google Sheets'); }
+function saveAI() { saveSetting('ai_key', document.getElementById('ai-key').value); saveSetting('ai_provider', document.getElementById('ai-provider').value); alert('تم حفظ الذكاء الاصطناعي'); }
 
+// === 2. القنوات (سيتم توسيعها لاحقًا) ===
+function renderChannels() {
+    // مؤقتًا: عرض رسالة
+    document.getElementById('posts-list').innerHTML = '<p class="text-center text-muted">اختر صفحة فيسبوك لعرض التعليقات</p>';
+}
+
+// === 3. الطلبات ===
+function renderOrders(orders) {
+    const list = document.getElementById('orders-list');
+    if (orders.length === 0) {
+        list.innerHTML = '<p class="text-center text-muted">لا توجد طلبات</p>';
+        return;
+    }
+
+    list.innerHTML = orders.map(o => `
+        <div class="border p-3 rounded mb-2 ${o.closed ? 'bg-light' : ''}">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>#${o.id}</strong> ${o.name} - ${o.governorate}
+                    <small class="text-muted d-block">${o.phone} • ${o.payment}</small>
+                </div>
+                <div>
+                    ${!o.closed ? `
+                    <button class="btn btn-sm btn-success me-2" onclick="closeOrder(${o.id})">تقفيل</button>
+                    ` : `<span class="badge bg-success">مُقفل</span>`}
+                    <select class="form-select form-select-sm d-inline w-auto" onchange="updateOrderStatus(${o.id}, this.value)">
+                        <option value="pending" ${o.status==='pending'?'selected':''}>معلق</option>
+                        <option value="delivering" ${o.status==='delivering'?'selected':''}>في التوصيل</option>
+                        <option value="done" ${o.status==='done'?'selected':''}>تم</option>
+                    </select>
+                </div>
+            </div>
+            ${o.closed ? `<small class="text-success">المبلغ: ${o.price} جنيه</small>` : ''}
+        </div>
+    `).join('');
+}
+
+function addOrder() {
+    const name = prompt('اسم العميل:');
+    const phone = prompt('رقم الهاتف:');
+    const governorate = prompt('المحافظة:');
+    if (name && phone && governorate) {
+        fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, phone, governorate, details: '', agent: '', payment: 'نقدي', price: 0 })
+        }).then(() => loadAllData());
+    }
+}
+
+function updateOrderStatus(id, status) {
+    fetch(`/api/orders/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+    });
+}
+
+function closeOrder(id) {
+    const price = prompt('المبلغ المستلم (جنيه):');
+    const payment = prompt('طريقة الدفع:', 'نقدي');
+    if (price) {
+        fetch(`/api/orders/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ closed: true, price: parseFloat(price), payment: payment || 'نقدي' })
+        }).then(() => loadAllData());
+    }
+}
+
+// === 4. المناديب ===
+function renderAgents(agents) {
+    const list = document.getElementById('agents-list');
+    if (agents.length === 0) {
+        list.innerHTML = '<p class="text-center text-muted">لا يوجد مناديب</p>';
+        return;
+    }
+    list.innerHTML = agents.map(a => `
+        <div class="col-md-4">
+            <div class="card p-3 text-center">
+                <h6>${a.name}</h6>
+                <p class="small text-muted">${a.governorate}<br>${a.phone}</p>
+                <span class="badge ${a.active ? 'bg-success' : 'bg-secondary'}">${a.active ? 'نشط' : 'متوقف'}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function addAgent() {
+    const name = prompt('اسم المندوب:');
+    const phone = prompt('رقم الهاتف:');
+    const governorate = prompt('المحافظة:');
+    if (name && phone && governorate) {
+        fetch('/api/agents', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, phone, governorate })
+        }).then(() => loadAllData());
+    }
+}
+
+// === 5. الحسابات ===
+function renderAccounts(orders) {
+    const today = new Date().toISOString().split('T')[0];
+    const todayClosed = orders.filter(o => o.closed && o.created_at.startsWith(today));
+
+    const total = todayClosed.reduce((s, o) => s + o.price, 0);
+    const cash = todayClosed.filter(o => o.payment === 'نقدي').reduce((s, o) => s + o.price, 0);
+    const vodafone = todayClosed.filter(o => o.payment.includes('فودافون')).reduce((s, o) => s + o.price, 0);
+
+    document.getElementById('today-total').textContent = total;
+    document.getElementById('today-cash').textContent = cash;
+    document.getElementById('today-vodafone').textContent = vodafone;
+}
+
+// === 6. البوت المساعد ===
+function sendBot() {
+    const input = document.getElementById('bot-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    addChatMessage(msg, 'user');
+    input.value = '';
+
+    fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: msg })
+    })
+    .then(r => r.json())
+    .then(data => {
+        addChatMessage(data.reply, 'ai');
+        executeBotCommand(msg);
+    });
+}
+
+function addChatMessage(text, type) {
+    const div = document.createElement('div');
+    div.className = `chat-bubble ${type}`;
+    div.textContent = text;
+    const messages = document.getElementById('chat-messages');
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+function executeBotCommand(cmd) {
+    // أمثلة بسيطة (يمكن توسيعها)
+    if (cmd.includes('أضف طلب')) {
+        const name = cmd.match(/لـ?(.+?) في/)?.[1] || prompt('اسم العميل:');
+        const gov = cmd.match(/في (.+)/)?.[1] || prompt('المحافظة:');
+        if (name && gov) addOrder();
+    }
+}
+
+// === 7. سير العمل ===
+function renderWorkflow() {
+    // يمكن حفظ الحالة في الإعدادات لاحقًا
+}
+function toggleStep(step) {
+    const btn = document.getElementById(`step-${step}`);
+    const isOn = btn.textContent === 'تشغيل';
+    btn.textContent = isOn ? 'إيقاف' : 'تشغيل';
+    btn.className = isOn ? 'btn btn-sm btn-outline-danger w-100' : 'btn btn-sm btn-outline-primary w-100';
+    saveSetting(`step_${step}`, isOn ? 'off' : 'on');
+}
+function stopAll() {
+    ['page', 'order', 'dist', 'close'].forEach(s => {
+        const btn = document.getElementById(`step-${s}`);
+        btn.textContent = 'تشغيل';
+        btn.className = 'btn btn-sm btn-outline-primary w-100';
+    });
+    alert('تم إيقاف السير كله');
+}
+
+// === التنقل بين الصفحات ===
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.onclick = () => {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.getElementById(link.dataset.page).classList.add('active');
+        link.classList.add('active');
+    };
+});
+
+// === فتح/إغلاق البوت ===
 document.getElementById('chat-bot').onclick = () => {
-    document.getElementById('chat-window').style.display = document.getElementById('chat-window').style.display === 'block' ? 'none' : 'block';
+    const win = document.getElementById('chat-window');
+    win.style.display = win.style.display === 'block' ? 'none' : 'block';
 };
+
+// === تحميل عند بدء التشغيل ===
+document.addEventListener('DOMContentLoaded', () => {
+    // تسجيل الدخول التلقائي للتجربة (يمكن إزالته)
+    // login();
+});
