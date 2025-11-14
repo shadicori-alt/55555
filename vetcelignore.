@@ -5,5 +5,5 @@
 !pyproject.toml
 !poetry.lock
 !api/
-!endx.py
+!index.py
 !package.json
