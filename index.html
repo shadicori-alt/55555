@@ -1,304 +1,119 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>بسم الله - بوت التواصل الذكي</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    .page { display: none; }
-    .page.active { display: block; }
-    .chat-bubble { max-width: 80%; padding: 10px 15px; border-radius: 20px; margin: 5px 0; }
-    .user { background: #1E40AF; color: white; align-self: flex-end; }
-    .ai { background: #E5E7EB; color: #1F2937; align-self: flex-start; }
-    .dark { background: #111827; color: #F3F4F6; }
-    .dark .bg-white { background: #1F2937; }
-    .typing { opacity: 0.7; font-style: italic; }
-    .btn-quick { @apply bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs; }
-  </style>
-</head>
-<body class="bg-gray-50">
+// public/app.js - الواجهة كاملة
+let ws;
+const settings = {};
 
-  <!-- Navbar -->
-  <nav class="bg-gradient-to-r from-blue-800 to-purple-700 text-white p-4 shadow-xl sticky top-0 z-50">
-    <div class="container mx-auto flex justify-between items-center">
-      <h1 class="text-xl font-bold">بسم الله - البوت الذكي</h1>
-      <div class="flex gap-2 md:gap-4 flex-wrap text-sm">
-        <button onclick="showPage('home')" class="hover:underline">الرئيسية</button>
-        <button onclick="showPage('bot')" class="hover:underline">البوت</button>
-        <button onclick="showPage('facebook')" class="hover:underline">فيسبوك</button>
-        <button onclick="showPage('whatsapp')" class="hover:underline">واتساب</button>
-        <button onclick="showPage('agents')" class="hover:underline">المناديب</button>
-        <button onclick="showPage('links')" class="hover:underline">الارتباطات</button>
-        <button id="theme-btn" class="hover:underline"><i class="fas fa-moon"></i></button>
-      </div>
-    </div>
-  </nav>
+// === تسجيل الدخول ===
+function login() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
 
-  <!-- Pages -->
-  <div class="container mx-auto mt-8 px-4">
+    fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            connectWebSocket();
+            loadAllData();
+        } else {
+            alert('خطأ في البيانات');
+        }
+    });
+}
 
-    <!-- Home -->
-    <div id="home" class="page active">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white p-6 rounded-xl shadow-lg text-center">
-          <i class="fab fa-whatsapp text-5xl text-green-600 mb-3"></i>
-          <h3 id="wa-sent" class="text-3xl font-bold">0</h3>
-          <p>رسائل واتساب</p>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-lg text-center">
-          <i class="fab fa-facebook text-5xl text-blue-600 mb-3"></i>
-          <h3 id="fb-replies" class="text-3xl font-bold">0</h3>
-          <p>ردود فيسبوك</p>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-lg text-center">
-          <i class="fas fa-robot text-5xl text-purple-600 mb-3"></i>
-          <h3 id="ai-res" class="text-3xl font-bold">0</h3>
-          <p>ردود ذكية</p>
-        </div>
-      </div>
-    </div>
+// === WebSocket (wss لـ Vercel) ===
+function connectWebSocket() {
+    ws = new WebSocket(`wss://${location.host}`);
+    ws.onopen = () => console.log('متصل');
+    ws.onmessage = () => loadAllData();
+    ws.onclose = () => setTimeout(connectWebSocket, 3000);
+}
 
-    <!-- Bot Control -->
-    <div id="bot" class="page">
-      <div class="bg-white p-6 rounded-xl shadow-lg">
-        <h2 class="text-xl font-bold mb-4">لوحة تحكم البوت</h2>
-        <div class="space-y-4">
-          <div>
-            <label class="block font-semibold">رسالة الترحيب</label>
-            <textarea id="welcome-msg" class="w-full p-3 border rounded-lg" placeholder="مرحبا! كيف يمكنني مساعدتك؟"></textarea>
-          </div>
-          <div>
-            <label class="block font-semibold">الرد التلقائي عند التأخير</label>
-            <textarea id="delay-msg" class="w-full p-3 border rounded-lg" placeholder="عذراً على التأخير، الطلب في الطريق"></textarea>
-          </div>
-          <div>
-            <label class="block font-semibold">أزرار الرد السريع</label>
-            <div id="quick-buttons" class="flex flex-wrap gap-2"></div>
-            <input id="new-btn" type="text" placeholder="أضف زر..." class="w-full p-2 border rounded-lg mt-2">
-            <button onclick="addQuickButton()" class="bg-blue-600 text-white px-4 py-2 rounded mt-2">+ أضف</button>
-          </div>
-          <button onclick="saveBotSettings()" class="w-full bg-green-600 text-white py-2 rounded">حفظ الإعدادات</button>
-        </div>
-      </div>
-    </div>
+// === تحميل البيانات ===
+async function loadAllData() {
+    const [orders, agents, settingsRes] = await Promise.all([
+        fetch('/api/orders').then(r => r.json()),
+        fetch('/api/agents').then(r => r.json()),
+        fetch('/api/settings').then(r => r.json())
+    ]);
+    Object.assign(settings, settingsRes);
+    renderLinks();
+    renderOrders(orders);
+    renderAgents(agents);
+}
 
-    <!-- Facebook Comments -->
-    <div id="facebook" class="page">
-      <div class="bg-white p-6 rounded-xl shadow-lg">
-        <h2 class="text-xl font-bold mb-4">رد على تعليقات فيسبوك</h2>
-        <div class="space-y-4">
-          <div>
-            <label class="block font-semibold">رابط المنشور</label>
-            <input id="post-url" type="url" class="w-full p-3 border rounded-lg" placeholder="https://facebook.com/...">
-          </div>
-          <div id="comments-list" class="space-y-3"></div>
-          <button onclick="loadComments()" class="bg-blue-600 text-white px-4 py-2 rounded">تحميل التعليقات</button>
-        </div>
-      </div>
-    </div>
+// === الارتباطات ===
+function renderLinks() {
+    const fbStatus = document.getElementById('fb-status');
+    fbStatus.textContent = settings.fb_page_name || 'غير متصل';
+    fbStatus.className = settings.fb_token ? 'badge bg-success ms-2' : 'badge bg-secondary ms-2';
 
-    <!-- WhatsApp -->
-    <div id="whatsapp" class="page">
-      <div class="bg-white p-6 rounded-xl shadow-lg">
-        <h2 class="text-xl font-bold mb-4">إرسال رسائل واتساب</h2>
-        <div class="space-y-4">
-          <div>
-            <label class="block font-semibold">رقم المندوب</label>
-            <input id="wa-number" type="tel" class="w-full p-3 border rounded-lg" placeholder="201234567890">
-          </div>
-          <div>
-            <label class="block font-semibold">الرسالة</label>
-            <textarea id="wa-msg" class="w-full p-3 border rounded-lg" placeholder="تذكير: طلب #123 في انتظار التسليم"></textarea>
-          </div>
-          <button onclick="sendWhatsApp()" class="bg-green-600 text-white px-4 py-2 rounded">إرسال</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Agents -->
-    <div id="agents" class="page">
-      <div class="bg-white p-6 rounded-xl shadow-lg">
-        <h2 class="text-xl font-bold mb-4">تذكير المناديب</h2>
-        <div id="agents-list" class="space-y-3"></div>
-        <button onclick="addAgentReminder()" class="bg-blue-600 text-white px-4 py-2 rounded mt-4">+ تذكير جديد</button>
-      </div>
-    </div>
-
-    <!-- Links -->
-    <div id="links" class="page">
-      <div class="bg-white p-6 rounded-xl shadow-lg">
-        <h2 class="text-xl font-bold mb-4">الارتباطات</h2>
-        <div class="space-y-4">
-          <div>
-            <label class="block font-semibold">WhatsApp (Twilio SID)</label>
-            <input id="twilio-sid" type="text" class="w-full p-3 border rounded-lg">
-          </div>
-          <div>
-            <label class="block font-semibold">WhatsApp Token</label>
-            <input id="twilio-token" type="password" class="w-full p-3 border rounded-lg">
-          </div>
-          <div>
-            <label class="block font-semibold">Facebook Page Token</label>
-            <input id="fb-token" type="password" class="w-full p-3 border rounded-lg">
-          </div>
-          <div>
-            <label class="block font-semibold">Grok API Key</label>
-            <input id="grok-key" type="password" class="w-full p-3 border rounded-lg">
-          </div>
-          <button onclick="saveLinks()" class="w-full bg-green-600 text-white py-2 rounded">حفظ</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Chat -->
-  <button id="chat-toggle" class="fixed bottom-6 left-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-5 rounded-full shadow-2xl z-50">
-    <i class="fas fa-robot text-2xl"></i>
-  </button>
-  <div id="chat-window" class="fixed bottom-24 left-6 w-80 bg-white rounded-2xl shadow-2xl hidden flex flex-col z-50">
-    <div class="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-t-2xl">المساعد الذكي</div>
-    <div id="chat-messages" class="flex-1 p-4 overflow-y-auto"></div>
-    <div class="p-4 border-t">
-      <div class="flex gap-2">
-        <input id="chat-input" type="text" placeholder="اكتب..." class="flex-1 p-3 border rounded-lg text-sm">
-        <button id="send-btn" class="bg-blue-600 text-white p-3 rounded-lg"><i class="fas fa-paper-plane"></i></button>
-      </div>
-    </div>
-  </div>
-
-  <!-- JavaScript -->
-  <script>
-    // Load Settings
-    const settings = JSON.parse(localStorage.getItem('bot_settings')) || {
-      welcome: "مرحبا! كيف يمكنني مساعدتك؟",
-      delay: "عذراً على التأخير",
-      quick_buttons: ["تتبع الطلب", "الدفع", "إلغاء"],
-      links: {}
+    document.getElementById('fb-connect').onclick = () => {
+        const win = window.open('/auth/facebook', 'fb', 'width=600,height=700');
+        const check = setInterval(() => {
+            if (win.closed) { clearInterval(check); loadAllData(); }
+        }, 1000);
     };
+}
 
-    // Save
-    function saveAll() {
-      localStorage.setItem('bot_settings', JSON.stringify(settings));
-    }
+// === الطلبات ===
+function renderOrders(orders) {
+    const list = document.getElementById('orders-list') || {};
+    list.innerHTML = orders.map(o => `
+        <div class="border p-3 rounded mb-2">
+            <strong>#${o.id}</strong> ${o.name} - ${o.governorate}
+            <button class="btn btn-sm btn-success float-end" onclick="closeOrder(${o.id})">تقفيل</button>
+        </div>
+    `).join('');
+}
 
-    // Page
-    function showPage(id) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
+function addOrder() {
+    const name = prompt('الاسم:');
+    const phone = prompt('الهاتف:');
+    const gov = prompt('المحافظة:');
+    if (name && phone && gov) {
+        fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, phone, governorate: gov })
+        }).then(loadAllData);
     }
+}
 
-    // Bot Settings
-    document.getElementById('welcome-msg').value = settings.welcome;
-    document.getElementById('delay-msg').value = settings.delay;
-    function renderQuickButtons() {
-      const container = document.getElementById('quick-buttons');
-      container.innerHTML = '';
-      settings.quick_buttons.forEach((btn, i) => {
-        const span = document.createElement('span');
-        span.className = 'btn-quick';
-        span.textContent = btn;
-        span.onclick = () => { settings.quick_buttons.splice(i,1); saveAll(); renderQuickButtons(); };
-        container.appendChild(span);
-      });
+function closeOrder(id) {
+    const price = prompt('المبلغ:');
+    if (price) {
+        fetch(`/api/orders/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ closed: true, price })
+        }).then(loadAllData);
     }
-    function addQuickButton() {
-      const txt = document.getElementById('new-btn').value.trim();
-      if (txt) {
-        settings.quick_buttons.push(txt);
-        document.getElementById('new-btn').value = '';
-        saveAll(); renderQuickButtons();
-      }
-    }
-    function saveBotSettings() {
-      settings.welcome = document.getElementById('welcome-msg').value;
-      settings.delay = document.getElementById('delay-msg').value;
-      saveAll(); alert('تم الحفظ');
-    }
-    renderQuickButtons();
+}
 
-    // WhatsApp
-    async function sendWhatsApp() {
-      const num = document.getElementById('wa-number').value;
-      const msg = document.getElementById('wa-msg').value;
-      if (!num || !msg) return alert('اكمل البيانات');
-      const sid = settings.links.twilio_sid;
-      const token = settings.links.twilio_token;
-      if (!sid || !token) return alert('اربط Twilio في الارتباطات');
-      try {
-        await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-          method: 'POST',
-          headers: {
-            'Authorization': 'Basic ' + btoa(sid + ':' + token),
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: new URLSearchParams({
-            To: `whatsapp:${num}`,
-            From: 'whatsapp:+14155238886',
-            Body: msg
-          })
-        });
-        alert('تم الإرسال!');
-        document.getElementById('wa-sent').textContent = parseInt(document.getElementById('wa-sent').textContent) + 1;
-      } catch (e) { alert('فشل: ' + e.message); }
-    }
+// === المناديب ===
+function renderAgents(agents) {
+    const list = document.getElementById('agents-list') || {};
+    list.innerHTML = agents.map(a => `
+        <div class="col-md-4">
+            <div class="card p-3 text-center">
+                <h6>${a.name}</h6>
+                <p>${a.governorate}</p>
+            </div>
+        </div>
+    `).join('');
+}
 
-    // Facebook Comments
-    function loadComments() {
-      const url = document.getElementById('post-url').value;
-      if (!url.includes('facebook.com')) return alert('رابط غير صالح');
-      const list = document.getElementById('comments-list');
-      list.innerHTML = '<p class="text-blue-600">جاري التحميل...</p>';
-      setTimeout(() => {
-        list.innerHTML = `
-          <div class="p-3 border rounded">
-            <p class="font-semibold">أحمد: متى التوصيل؟</p>
-            <textarea class="w-full p-2 border rounded mt-2" placeholder="الرد..."></textarea>
-            <button class="bg-blue-600 text-white px-3 py-1 rounded text-xs mt-1">إرسال</button>
-          </div>
-        `;
-      }, 1000);
-    }
-
-    // Links
-    function saveLinks() {
-      settings.links.twilio_sid = document.getElementById('twilio-sid').value;
-      settings.links.twilio_token = document.getElementById('twilio-token').value;
-      settings.links.fb_token = document.getElementById('fb-token').value;
-      settings.links.grok_key = document.getElementById('grok-key').value;
-      saveAll(); alert('تم الحفظ');
-    }
-
-    // Chat
-    const chatToggle = document.getElementById('chat-toggle');
-    const chatWindow = document.getElementById('chat-window');
-    const closeChat = document.getElementById('close-chat');
-    const chatMessages = document.getElementById('chat-messages');
-    const chatInput = document.getElementById('chat-input');
-    const sendBtn = document.getElementById('send-btn');
-
-    chatToggle.onclick = () => chatWindow.classList.toggle('hidden');
-    closeChat.onclick = () => chatWindow.classList.add('hidden');
-    sendBtn.onclick = () => {
-      const msg = chatInput.value.trim();
-      if (!msg) return;
-      addMsg(msg, 'user');
-      chatInput.value = '';
-      setTimeout(() => addMsg('تم الرد تلقائيًا!', 'ai'), 1000);
+// === التنقل ===
+document.querySelectorAll('.nav-link').forEach(l => {
+    l.onclick = () => {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+        document.getElementById(l.dataset.page).classList.add('active');
+        l.classList.add('active');
     };
-
-    function addMsg(text, type) {
-      const div = document.createElement('div');
-      div.className = `chat-bubble ${type}`;
-      div.textContent = text;
-      chatMessages.appendChild(div);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    // Init
-    showPage('home');
-  </script>
-</body>
-</html>
+});
