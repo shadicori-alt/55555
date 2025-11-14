@@ -1,6 +1,9 @@
-# احتفظ بالملفات المهمة في الذاكرة المؤقتة
+# تجاهل كل الملفات إلا المهمة
+*
+
 !requirements.txt
 !pyproject.toml
 !poetry.lock
 !api/
-!*.py
+!endx.py
+!package.json
