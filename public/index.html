@@ -9,47 +9,56 @@
   <link rel="manifest" href="/manifest.json">
   <style>
     body { background: linear-gradient(135deg, #667eea, #764ba2); font-family: 'Cairo', sans-serif; min-height: 100vh; }
+    .navbar { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-radius: 15px; }
     .card { border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
     .nav-link.active { color: #1E40AF !important; border-bottom: 3px solid #1E40AF; }
+    .page { display: none; }
+    .page.active { display: block; }
+    #chat-bot { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: #1E40AF; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    #chat-window { position: fixed; bottom: 90px; right: 20px; width: 350px; height: 500px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: none; }
   </style>
 </head>
 <body class="p-3">
-  <div class="container">
-    <nav class="navbar navbar-expand-lg bg-white rounded shadow mb-4">
-      <a class="navbar-brand fw-bold" href="#">بسم الله</a>
-      <div class="navbar-nav flex-wrap gap-2">
-        <a class="nav-link active" data-page="home">الرئيسية</a>
-        <a class="nav-link" data-page="orders">الطلبات</a>
-        <a class="nav-link" data-page="agents">المناديب</a>
-        <a class="nav-link" data-page="links">الارتباطات</a>
+
+  <!-- تسجيل الدخول -->
+  <div id="login" class="container mt-5">
+    <div class="card p-4 mx-auto" style="max-width: 400px;">
+      <h3 class="text-center">تسجيل الدخول</h3>
+      <input id="username" class="form-control mb-2" placeholder="اسم المستخدم">
+      <input id="password" class="form-control mb-2" type="password" placeholder="كلمة السر">
+      <button class="btn btn-primary w-100" onclick="login()">دخول</button>
+    </div>
+  </div>
+
+  <!-- النظام -->
+  <div id="app" class="container" style="display: none;">
+    <nav class="navbar navbar-expand-lg mb-4">
+      <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="#">بسم الله</a>
+        <div class="navbar-nav flex-wrap gap-2">
+          <a class="nav-link active" data-page="links">الارتباطات</a>
+          <a class="nav-link" data-page="channels">القنوات</a>
+          <a class="nav-link" data-page="orders">الطلبات</a>
+          <a class="nav-link" data-page="agents">المناديب</a>
+          <a class="nav-link" data-page="accounts">الحسابات</a>
+          <a class="nav-link" data-page="bot">البوت</a>
+          <a class="nav-link" data-page="workflow">سير العمل</a>
+        </div>
       </div>
     </nav>
 
-    <div id="home" class="page row g-3">
-      <div class="col-md-4"><div class="card p-4 text-center text-white bg-primary"><h3 id="total">0</h3><p>الطلبات</p></div></div>
-      <div class="col-md-4"><div class="card p-4 text-center text-white bg-success"><h3 id="pending">0</h3><p>معلقة</p></div></div>
-      <div class="col-md-4"><div class="card p-4 text-center text-white bg-danger"><h3 id="wa">0</h3><p>واتساب</p></div></div>
-    </div>
+    <!-- باقي الصفحات هنا (سأرسلها في الرد التالي) -->
+  </div>
 
-    <div id="orders" class="page" style="display:none">
-      <div class="card p-4">
-        <button class="btn btn-primary mb-3" onclick="addOrder()">+ طلب</button>
-        <div id="orders-list"></div>
-      </div>
-    </div>
-
-    <div id="agents" class="page" style="display:none">
-      <div class="card p-4">
-        <div id="agents-list"></div>
-      </div>
-    </div>
-
-    <div id="links" class="page" style="display:none">
-      <div class="card p-4">
-        <input id="twilio_sid" class="form-control mb-2" placeholder="Twilio SID">
-        <input id="twilio_token" class="form-control mb-2" type="password" placeholder="Twilio Token">
-        <input id="grok_key" class="form-control mb-2" type="password" placeholder="Grok Key">
-        <button class="btn btn-success" onclick="saveKeys()">حفظ</button>
+  <!-- البوت -->
+  <div id="chat-bot">🤖</div>
+  <div id="chat-window" class="card">
+    <div class="card-header bg-primary text-white">المساعد الذكي</div>
+    <div id="chat-messages" class="card-body overflow-auto" style="height: 380px;"></div>
+    <div class="card-footer">
+      <div class="input-group">
+        <input id="bot-input" class="form-control" placeholder="اكتب أمر...">
+        <button class="btn btn-primary" onclick="sendBot()">إرسال</button>
       </div>
     </div>
   </div>
