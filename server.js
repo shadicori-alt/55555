@@ -1,4 +1,5 @@
-// server.js - النظام الكامل: بسم الله
+// server.js - النظام الكامل مع ربط فيسبوك حقيقي
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
@@ -16,22 +17,20 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// WebSocket للتحديث الفوري
+// WebSocket
 const wss = new WebSocket.Server({ noServer: true });
 
 // قاعدة البيانات
 const db = new sqlite3.Database('./data.db', (err) => {
     if (err) console.error('DB Error:', err);
     else {
-        console.log('✅ قاعدة البيانات متصلة');
+        console.log('قاعدة البيانات متصلة');
         initDB();
     }
 });
 
-// إنشاء الجداول
 function initDB() {
     db.serialize(() => {
-        // الطلبات
         db.run(`CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT, phone TEXT, address TEXT, governorate TEXT,
@@ -41,13 +40,11 @@ function initDB() {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
-        // المناديب
         db.run(`CREATE TABLE IF NOT EXISTS agents (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT, phone TEXT, governorate TEXT, active BOOLEAN DEFAULT 1
         )`);
 
-        // الرسائل (تعليقات + رسائل)
         db.run(`CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             channel TEXT, sender TEXT, text TEXT,
@@ -56,18 +53,15 @@ function initDB() {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
-        // الإعدادات
         db.run(`CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY, value TEXT
         )`);
 
-        // المستخدم (تسجيل الدخول)
         db.run(`CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE, password TEXT
         )`);
 
-        // التذكيرات
         db.run(`CREATE TABLE IF NOT EXISTS reminders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             agent_id INTEGER, message TEXT, time TEXT, repeat TEXT DEFAULT 'لا'
@@ -85,19 +79,60 @@ function initDB() {
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     db.get('SELECT * FROM users WHERE username = ? AND password = ?', [username, password], (err, row) => {
-        if (row) {
-            res.json({ success: true });
-        } else {
-            res.status(401).json({ error: 'بيانات خاطئة' });
-        }
+        if (row) res.json({ success: true });
+        else res.status(401).json({ error: 'بيانات خاطئة' });
     });
+});
+
+// === فيسبوك OAuth (حقيقي) ===
+app.get('/auth/facebook', (req, res) => {
+    if (!process.env.FB_APP_ID || !process.env.FB_APP_SECRET) {
+        return res.status(400).send('فيسبوك غير مُعَد');
+    }
+    const redirectUri = `${req.protocol}://${req.get('host')}/auth/facebook/callback`;
+    const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${process.env.FB_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=pages_messaging,pages_read_engagement,pages_manage_posts&response_type=code&state=123`;
+    res.redirect(authUrl);
+});
+
+app.get('/auth/facebook/callback', async (req, res) => {
+    const code = req.query.code;
+    if (!code) return res.send('فشل الربط');
+
+    try {
+        const tokenRes = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
+            params: {
+                client_id: process.env.FB_APP_ID,
+                client_secret: process.env.FB_APP_SECRET,
+                code,
+                redirect_uri: `${req.protocol}://${req.get('host')}/auth/facebook/callback`
+            }
+        });
+
+        const userToken = tokenRes.data.access_token;
+
+        // جلب الصفحات
+        const pagesRes = await axios.get(`https://graph.facebook.com/me/accounts?access_token=${userToken}`);
+        const page = pagesRes.data.data[0];
+        if (!page) return res.send('لا توجد صفحات');
+
+        await saveSetting('fb_page_id', page.id);
+        await saveSetting('fb_token', page.access_token);
+        await saveSetting('fb_page_name', page.name);
+
+        res.send(`
+            <script>
+                alert("تم ربط فيسبوك بنجاح! الصفحة: ${page.name}");
+                window.close();
+            </script>
+        `);
+    } catch (e) {
+        res.send('خطأ: ' + e.message);
+    }
 });
 
 // === API الطلبات ===
 app.get('/api/orders', (req, res) => {
-    db.all('SELECT * FROM orders ORDER BY created_at DESC', [], (err, rows) => {
-        res.json(rows || []);
-    });
+    db.all('SELECT * FROM orders ORDER BY created_at DESC', [], (err, rows) => res.json(rows || []));
 });
 
 app.post('/api/orders', (req, res) => {
@@ -107,7 +142,7 @@ app.post('/api/orders', (req, res) => {
         [name, phone, address, governorate, details || '', agent || '', payment || 'نقدي', price || 0],
         function () {
             res.json({ id: this.lastID });
-            broadcast({ type: 'new_order', orderId: this.lastID });
+            broadcast({ type: 'new_order' });
         }
     );
 });
@@ -119,38 +154,15 @@ app.put('/api/orders/:id', (req, res) => {
         [status || 'pending', closed ? 1 : 0, price || 0, payment || 'نقدي', req.params.id],
         () => {
             res.json({ success: true });
-            broadcast({ type: 'update_order', orderId: req.params.id });
+            broadcast({ type: 'update' });
         }
     );
 });
 
 // === المناديب ===
-app.get('/api/agents', (req, res) => {
-    db.all('SELECT * FROM agents', [], (err, rows) => res.json(rows || []));
-});
+app.get('/api/agents', (req, res) => db.all('SELECT * FROM agents', [], (err, rows) => res.json(rows || [])));
 
-app.post('/api/agents', (req, res) => {
-    const { name, phone, governorate } = req.body;
-    db.run('INSERT INTO agents (name, phone, governorate) VALUES (?, ?, ?)', [name, phone, governorate], function () {
-        res.json({ id: this.lastID });
-    });
-});
-
-// === الرسائل (Inbox) ===
-app.get('/api/messages', (req, res) => {
-    db.all('SELECT * FROM messages ORDER BY created_at DESC LIMIT 50', [], (err, rows) => res.json(rows || []));
-});
-
-app.post('/api/messages', (req, res) => {
-    const { channel, sender, text, post_id, comment_id } = req.body;
-    db.run('INSERT INTO messages (channel, sender, text, post_id, comment_id) VALUES (?, ?, ?, ?, ?)',
-        [channel, sender, text, post_id || '', comment_id || ''], () => {
-            res.json({ success: true });
-            broadcast({ type: 'new_message' });
-        });
-});
-
-// === واتساب (Twilio) ===
+// === واتساب ===
 app.post('/api/whatsapp/send', async (req, res) => {
     const { to, msg } = req.body;
     const sid = await getSetting('twilio_sid');
@@ -160,11 +172,7 @@ app.post('/api/whatsapp/send', async (req, res) => {
     try {
         await axios.post(
             `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
-            new URLSearchParams({
-                To: `whatsapp:${to}`,
-                From: 'whatsapp:+14155238886',
-                Body: msg
-            }),
+            new URLSearchParams({ To: `whatsapp:${to}`, From: 'whatsapp:+14155238886', Body: msg }),
             { auth: { username: sid, password: token } }
         );
         res.json({ success: true });
@@ -173,15 +181,13 @@ app.post('/api/whatsapp/send', async (req, res) => {
     }
 });
 
-// === الذكاء الاصطناعي (Grok / OpenAI) ===
+// === AI ===
 app.post('/api/ai', async (req, res) => {
     const { prompt } = req.body;
     const key = await getSetting('ai_key');
     const provider = (await getSetting('ai_provider')) || 'grok';
 
-    if (!key) {
-        return res.json({ reply: 'الذكاء الاصطناعي غير متصل. تم تسجيل الطلب.' });
-    }
+    if (!key) return res.json({ reply: 'AI غير متصل' });
 
     try {
         const url = provider === 'openai'
@@ -189,16 +195,12 @@ app.post('/api/ai', async (req, res) => {
             : 'https://api.x.ai/v1/chat/completions';
         const model = provider === 'openai' ? 'gpt-3.5-turbo' : 'grok-beta';
 
-        const response = await axios.post(url, {
-            model,
-            messages: [{ role: 'user', content: prompt }]
-        }, {
+        const r = await axios.post(url, { model, messages: [{ role: 'user', content: prompt }] }, {
             headers: { Authorization: `Bearer ${key}` }
         });
-
-        res.json({ reply: response.data.choices[0].message.content });
+        res.json({ reply: r.data.choices[0].message.content });
     } catch (e) {
-        res.json({ reply: 'خطأ في الذكاء الاصطناعي' });
+        res.json({ reply: 'خطأ في AI' });
     }
 });
 
@@ -213,60 +215,42 @@ app.get('/api/settings', (req, res) => {
 
 app.post('/api/settings', (req, res) => {
     const { key, value } = req.body;
-    db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value], () => {
-        res.json({ success: true });
-    });
+    db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value], () => res.json({ success: true }));
 });
 
 function getSetting(key) {
-    return new Promise(resolve => {
-        db.get('SELECT value FROM settings WHERE key = ?', [key], (err, row) => {
-            resolve(row?.value || '');
-        });
-    });
+    return new Promise(r => db.get('SELECT value FROM settings WHERE key = ?', [key], (e, row) => r(row?.value || '')));
 }
 
-// === التوزيع التلقائي (كل يوم 10 صباحًا) ===
-cron.schedule('0 10 * * *', async () => {
-    const distEnabled = await getSetting('dist_enabled');
-    if (distEnabled !== 'true') return;
+function saveSetting(key, value) {
+    return new Promise(r => db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value], () => r()));
+}
 
-    const orders = await new Promise(r => db.all('SELECT * FROM orders WHERE status = "pending" AND closed = 0', [], (e, rows) => r(rows)));
-    const agents = await new Promise(r => db.all('SELECT * FROM agents WHERE active = 1', [], (e, rows) => r(rows)));
+// === التوزيع التلقائي ===
+cron.schedule('0 10 * * *', async () => {
+    const enabled = await getSetting('dist_enabled');
+    if (enabled !== 'true') return;
+
+    const orders = await new Promise(r => db.all('SELECT * FROM orders WHERE status = "pending"', [], (e, rows) => r(rows)));
+    const agents = await new Promise(r => db.all('SELECT * FROM agents', [], (e, rows) => r(rows)));
 
     for (let agent of agents) {
-        const agentOrders = orders.filter(o Sustainability => o.governorate === agent.governorate);
+        const agentOrders = orders.filter(o => o.governorate === agent.governorate);
         if (agentOrders.length > 0) {
-            const msg = `عندك ${agentOrders.length} طلبات جديدة في ${agent.governorate}:\n${agentOrders.map(o => `#${o.id} - ${o.name}`).join('\n')}\nرابط التطبيق: ${process.env.URL || 'https://yourapp.onrender.com'}/agent/${agent.phone}`;
+            const msg = `عندك ${agentOrders.length} طلبات جديدة:\n${agentOrders.map(o => `#${o.id} - ${o.name}`).join('\n')}`;
             await fetch('/api/whatsapp/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ to: agent.phone, msg })
             });
-            // تحديث الحالة
-            agentOrders.forEach(o => {
-                db.run('UPDATE orders SET status = "delivering", agent = ? WHERE id = ?', [agent.name, o.id]);
-            });
         }
     }
 });
 
-// === WebSocket للتحديث الفوري ===
+// === WebSocket ===
 function broadcast(data) {
-    wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(data));
-        }
-    });
+    wss.clients.forEach(c => c.readyState === WebSocket.OPEN && c.send(JSON.stringify(data)));
 }
 
-// بدء السيرفر
-const server = app.listen(PORT, () => {
-    console.log(`🚀 السيرفر شغال على المنفذ ${PORT}`);
-});
-
-server.on('upgrade', (req, socket, head) => {
-    wss.handleUpgrade(req, socket, head, ws => {
-        wss.emit('connection', ws, req);
-    });
-});
+const server = app.listen(PORT, () => console.log(`السيرفر شغال على ${PORT}`));
+server.on('upgrade', (req, socket, head) => wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws, req)));
