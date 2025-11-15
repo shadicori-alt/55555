@@ -1,113 +1,135 @@
-// public/app.js - كامل 100%
-let ws;
-const settings = {};
+// app.js - الملف الرئيسي المعدل (React App مع Router و Tailwind)
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react-router-dom';
+import Dashboard from './pages/dashboard'; // اللوحة الرئيسية الجديدة
+import Connections from './pages/connections'; // الارتباطات (مع ربط Messenger/WhatsApp/AI/Shopify)
+import Requests from './pages/requests'; // الطلبات (مع محافظ ومخزون)
+import Delegates from './pages/delegates'; // المناديب (مع تطبيق خفيف وإشعارات)
+import Accounts from './pages/accounts'; // الحسابات/التقفيلات
+import Workflow from './pages/workflow'; // سير العمل (جديد مع أزرار إيقاف)
+import Messages from './pages/messages'; // الرسائل والتعليقات
+import BotAssistant from './components/BotAssistant'; // المساعد الذكي (كومبوننت منفصل)
 
-function login() {
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value;
-    fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            document.getElementById('login').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
-            connectWebSocket();
-            loadAllData();
-        } else alert('خطأ');
-    });
+// بيانات وهمية للإحصائيات (هتتحدث من API لاحقًا)
+const mockStats = {
+  requests: { total: 45, today: 12 },
+  delegates: { active: 8, deliveries: 120 },
+  closures: { pending: 5, total: 2000 },
+  alerts: ['زيادة في المرتجعات 20% - اقتراح AI: أضف مندوبًا جديدًا']
+};
+
+function Sidebar() {
+  const [isOpen, setIsOpen] = useState(true);
+  return (
+    <div className={`bg-gray-800 text-white h-screen p-4 ${isOpen ? 'w-64' : 'w-20'} transition-width duration-300 fixed`}>
+      <button onClick={() => setIsOpen(!isOpen)} className="mb-4 p-2 bg-gray-700 rounded">☰</button>
+      <nav>
+        <ul className="space-y-2">
+          <li><Link to="/" className="block p-2 hover:bg-gray-700 rounded">🏠 اللوحة الرئيسية</Link></li>
+          <li><Link to="/connections" className="block p-2 hover:bg-gray-700 rounded">🔗 الارتباطات</Link></li>
+          <li><Link to="/requests" className="block p-2 hover:bg-gray-700 rounded">📋 الطلبات</Link></li>
+          <li><Link to="/delegates" className="block p-2 hover:bg-gray-700 rounded">🚚 المناديب</Link></li>
+          <li><Link to="/accounts" className="block p-2 hover:bg-gray-700 rounded">💰 الحسابات</Link></li>
+          <li><Link to="/workflow" className="block p-2 hover:bg-gray-700 rounded">⚙️ سير العمل</Link></li>
+          <li><Link to="/messages" className="block p-2 hover:bg-gray-700 rounded">💬 الرسائل</Link></li>
+          <li><button onClick={() => window.open('/delegate-app', '_blank')} className="block p-2 hover:bg-gray-700 rounded w-full text-left">📱 تطبيق المناديب</button></li>
+        </ul>
+      </nav>
+      <div className="mt-4 p-2 bg-blue-600 rounded">
+        <BotAssistant /> {/* المساعد الذكي هنا كزر دردشة */}
+      </div>
+    </div>
+  );
 }
 
-function connectWebSocket() {
-    ws = new WebSocket(`wss://${location.host}`);
-    ws.onmessage = () => loadAllData();
-    ws.onclose = () => setTimeout(connectWebSocket, 3000);
-}
-
-async function loadAllData() {
-    const [orders, agents, s] = await Promise.all([
-        fetch('/api/orders').then(r => r.json()),
-        fetch('/api/agents').then(r => r.json()),
-        fetch('/api/settings').then(r => r.json())
-    ]);
-    Object.assign(settings, s);
-    renderLinks();
-    renderOrders(orders);
-    renderAgents(agents);
-    renderAccounts(orders);
-}
-
-function renderLinks() {
-    document.getElementById('fb-status').textContent = settings.fb_page_name || 'غير متصل';
-    document.getElementById('fb-status').className = settings.fb_token ? 'badge bg-success ms-2' : 'badge bg-secondary ms-2';
-    document.getElementById('fb-connect').onclick = () => {
-        const win = window.open('/auth/facebook', 'fb', 'width=600,height=700');
-        const check = setInterval(() => { if (win.closed) { clearInterval(check); loadAllData(); } }, 1000);
+function AppContent() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    // تحميل بيانات من API عند التحميل (مثل Shopify للإحصائيات)
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/stats', { // API جديد هنعمله لاحقًا
+          headers: { 'Authorization': `Bearer ${process.env.SHOPIFY_TOKEN}` } // من Vercel env
+        });
+        // حدث mockStats هنا
+      } catch (error) {
+        console.error('خطأ في تحميل البيانات:', error);
+      }
     };
-    document.getElementById('twilio-sid').value = settings.twilio_sid || '';
-    document.getElementById('twilio-token').value = settings.twilio_token || '';
-}
+    fetchData();
+  }, []);
 
-async function saveSetting(k, v) {
-    await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: k, value: v }) });
-}
-function saveTwilio() { saveSetting('twilio_sid', document.getElementById('twilio-sid').value); saveSetting('twilio_token', document.getElementById('twilio-token').value); alert('تم'); }
-
-function renderOrders(orders) {
-    const list = document.getElementById('orders-list');
-    list.innerHTML = orders.map(o => `
-        <div class="border p-3 rounded mb-2 ${o.closed ? 'bg-light' : ''}">
-            <div class="d-flex justify-content-between">
-                <div><strong>#${o.id}</strong> ${o.name} - ${o.governorate}</div>
-                ${!o.closed ? `<button class="btn btn-sm btn-success" onclick="closeOrder(${o.id})">تقفيل</button>` : `<span class="badge bg-success">مُقفل</span>`}
-            </div>
+  return (
+    <div className="ml-64 p-6 bg-gray-100 min-h-screen"> {/* margin للـ sidebar */}
+      <header className="mb-6 flex justify-between items-center">
+        <h1 className="text-2xl font-bold">نظام الإدارة الذكي</h1>
+        <div className="space-x-2">
+          <button onClick={() => navigate('/')} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">تحديث</button>
+          <button className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" onClick={() => { /* إيقاف عام */ alert('إيقاف جميع السير - تأكيد؟'); }}>🛑 إيقاف عام</button>
         </div>
-    `).join('');
+      </header>
+      <Routes>
+        <Route path="/" element={<Dashboard stats={mockStats} />} />
+        <Route path="/connections" element={<Connections />} />
+        <Route path="/requests" element={<Requests />} />
+        <Route path="/delegates" element={<Delegates />} />
+        <Route path="/accounts" element={<Accounts />} />
+        <Route path="/workflow" element={<Workflow />} />
+        <Route path="/messages" element={<Messages />} />
+      </Routes>
+    </div>
+  );
 }
 
-function addOrder() {
-    const name = prompt('اسم:'); const phone = prompt('هاتف:'); const gov = prompt('محافظة:');
-    if (name && phone && gov) fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, phone, governorate: gov }) }).then(loadAllData);
+function App() {
+  return (
+    <Router>
+      <div className="flex">
+        <Sidebar />
+        <AppContent />
+      </div>
+    </Router>
+  );
 }
 
-function closeOrder(id) {
-    const price = prompt('المبلغ:');
-    if (price) fetch(`/api/orders/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ closed: true, price }) }).then(loadAllData);
+// كومبوننت المساعد الذكي البسيط (هيتمدد لاحقًا)
+function BotAssistant() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const sendMessage = async () => {
+    if (!message) return;
+    try {
+      const response = await fetch('/api/bot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, api: 'grok' }) // تبديل AI هنا
+      });
+      const data = await response.json();
+      alert(`رد المساعد: ${data.reply}`); // عرض في دردشة لاحقًا
+    } catch (error) {
+      alert('خطأ في الاتصال بالمساعد');
+    }
+    setMessage('');
+  };
+
+  return (
+    <div>
+      <button onClick={() => setIsOpen(!isOpen)} className="text-sm">🤖 المساعد الذكي</button>
+      {isOpen && (
+        <div className="mt-2 p-2 bg-gray-700 rounded">
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            placeholder="أمرك... (مثل: عرض تقرير)"
+            className="w-full p-1 text-black rounded mb-1"
+          />
+          <button onClick={sendMessage} className="w-full bg-green-500 text-white p-1 rounded">إرسال</button>
+        </div>
+      )}
+    </div>
+  );
 }
 
-function renderAgents(agents) {
-    document.getElementById('agents-list').innerHTML = agents.map(a => `
-        <div class="col-md-4"><div class="card p-3 text-center"><h6>${a.name}</h6><p>${a.governorate}</p></div></div>
-    `).join('');
-}
-
-function addAgent() {
-    const name = prompt('اسم:'); const phone = prompt('هاتف:'); const gov = prompt('محافظة:');
-    if (name && phone && gov) fetch('/api/agents', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, phone, governorate: gov }) }).then(loadAllData);
-}
-
-function renderAccounts(orders) {
-    const today = new Date().toISOString().split('T')[0];
-    const closed = orders.filter(o => o.closed && o.created_at.startsWith(today));
-    const total = closed.reduce((s, o) => s + o.price, 0);
-    document.getElementById('today-total').textContent = total;
-}
-
-function toggleStep(step) {
-    const btn = document.getElementById(`step-${step}`);
-    btn.textContent = btn.textContent === 'تشغيل' ? 'إيقاف' : 'تشغيل';
-    btn.className = btn.textContent === 'إيقاف' ? 'btn btn-sm btn-outline-danger w-100' : 'btn btn-sm btn-outline-primary w-100';
-}
-function stopAll() {
-    ['page', 'order', 'dist', 'close'].forEach(s => {
-        const btn = document.getElementById(`step-${s}`);
-        btn.textContent = 'تشغيل';
-        btn.className = 'btn btn-sm btn-outline-primary w-100';
-    });
-}
-
-document.querySelectorAll('.nav-link').forEach(l => l.onclick = () => {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
-    document.getElementById(l.dataset.page).classList.add('active');
-    l.classList.add('active');
-});
+export default App;
