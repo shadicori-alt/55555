@@ -16,26 +16,8 @@ MOCK_STATS = {
     'alerts': ['زيادة في المرتجعات 20% - اقتراح AI: أضف مندوبًا جديدًا للقاهرة']
 }
 
-@app.route('/', methods=['GET', 'POST'])
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password', '').strip()
-        if username == 'admin' and password == '123456':
-            session['logged_in'] = True
-            session['username'] = username
-            flash('تم تسجيل الدخول بنجاح!', 'success')
-            return redirect(url_for('dashboard'))
-        flash('بيانات خاطئة.', 'error')
-    if session.get('logged_in'):
-        return redirect(url_for('dashboard'))
-    return render_template('login.html')
-
-@app.route('/dashboard')
+@app.route('/')
 def dashboard():
-    # # if not session.get('logged_in'):  # معلق مؤقتًا – روح مباشرة
-    # #     return redirect(url_for('login'))
     return render_template('dashboard.html',
                           today_messages=MOCK_STATS['today_messages'],
                           today_comments=MOCK_STATS['today_comments'],
@@ -48,7 +30,7 @@ def dashboard():
 def logout():
     session.clear()
     flash('تم تسجيل الخروج.', 'info')
-    return redirect(url_for('login'))
+    return redirect(url_for('dashboard'))
 
 @app.route('/api/stats')
 def get_stats():
@@ -135,12 +117,10 @@ def get_delegates():
         ]
     })
 
-# Placeholders for other pages (معلق اللوجين)
+# Placeholders for other pages (بدون لوجين)
 for page in ['connections', 'requests', 'delegates', 'accounts', 'workflow', 'messages']:
     @app.route(f'/{page}')
     def route_placeholder():
-        # # if not session.get('logged_in'):
-        # #     return redirect(url_for('login'))
         return render_template(f'{page}.html')
 
 if __name__ == '__main__':
