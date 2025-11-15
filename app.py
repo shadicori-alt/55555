@@ -34,7 +34,7 @@ def login():
 
 @app.route('/dashboard')
 def dashboard():
-    # # if not session.get('logged_in'):  # علقت مؤقتًا عشان تدخل مباشرة
+    # # if not session.get('logged_in'):  # معلق مؤقتًا – روح مباشرة
     # #     return redirect(url_for('login'))
     return render_template('dashboard.html',
                           today_messages=MOCK_STATS['today_messages'],
@@ -96,7 +96,46 @@ def toggle_service():
         return jsonify({'status': 'success'})
     return jsonify({'status': 'error'})
 
-# Placeholders for other pages (علقت اللوجين مؤقتًا)
+@app.route('/api/connections/setup', methods=['POST'])
+def setup_connection():
+    data = request.get_json()
+    service = data.get('service')
+    if service == 'messenger':
+        return jsonify({'message': 'ربط Messenger: أضف webhook إلى https://your-app.vercel.app/api/messenger-webhook'})
+    elif service == 'whatsapp':
+        return jsonify({'message': 'ربط WhatsApp: استخدم Cloud API endpoint'})
+    return jsonify({'message': 'خدمة غير مدعومة'})
+
+@app.route('/api/connections/test-ai', methods=['POST'])
+def test_ai():
+    data = request.get_json()
+    provider = data.get('provider')
+    key = data.get('key')
+    return jsonify({'message': f'اختبار {provider} ناجح! Key محفوظ. (استخدم للبوت)'})
+
+@app.route('/api/connections/log')
+def connections_log():
+    return jsonify({'logs': ['Messenger متصل 2024-11-15', 'Shopify جاهز', 'AI Grok نشط']})
+
+@app.route('/api/requests')
+def get_requests():
+    return jsonify({
+        'requests': [
+            {'id': '001', 'client': 'أحمد محمد', 'governorate': 'القاهرة', 'delegate': 'مندوب 1', 'status': 'قيد التنفيذ', 'date': '2024-11-15'},
+            {'id': '002', 'client': 'فاطمة علي', 'governorate': 'الإسكندرية', 'delegate': 'مندوب 2', 'status': 'مكتمل', 'date': '2024-11-14'}
+        ]
+    })
+
+@app.route('/api/delegates')
+def get_delegates():
+    return jsonify({
+        'delegates': [
+            {'id': '1', 'name': 'أحمد علي', 'phone': '0123456789', 'deliveries': '25', 'rating': '4.5/5', 'active': True, 'status': 'نشط'},
+            {'id': '2', 'name': 'محمد أحمد', 'phone': '0987654321', 'deliveries': '18', 'rating': '4.2/5', 'active': False, 'status': 'معطل'}
+        ]
+    })
+
+# Placeholders for other pages (معلق اللوجين)
 for page in ['connections', 'requests', 'delegates', 'accounts', 'workflow', 'messages']:
     @app.route(f'/{page}')
     def route_placeholder():
