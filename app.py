@@ -17,6 +17,7 @@ MOCK_STATS = {
 }
 
 @app.route('/')
+@app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html',
                           today_messages=MOCK_STATS['today_messages'],
@@ -25,12 +26,6 @@ def dashboard():
                           active_agents=MOCK_STATS['active_agents'],
                           services=MOCK_SERVICES,
                           shopify_token=os.getenv('SHOPIFY_TOKEN', ''))
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    flash('تم تسجيل الخروج.', 'info')
-    return redirect(url_for('dashboard'))
 
 @app.route('/api/stats')
 def get_stats():
@@ -117,7 +112,16 @@ def get_delegates():
         ]
     })
 
-# Placeholders for other pages (بدون لوجين)
+@app.route('/api/accounts')
+def get_accounts():
+    return jsonify({
+        'accounts': [
+            {'id': '1', 'delegate': 'أحمد علي', 'deliveries': '25 × 50 = 1250', 'returns': '-100', 'pending': '3', 'total': '1150', 'paid': True, 'status': 'مدفوع'},
+            {'id': '2', 'delegate': 'محمد أحمد', 'deliveries': '18 × 50 = 900', 'returns': '-50', 'pending': '2', 'total': '850', 'paid': False, 'status': 'معلق'}
+        ]
+    })
+
+# Placeholders for other pages (بدون أي لوجين)
 for page in ['connections', 'requests', 'delegates', 'accounts', 'workflow', 'messages']:
     @app.route(f'/{page}')
     def route_placeholder():
