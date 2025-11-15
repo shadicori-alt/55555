@@ -1,267 +1,185 @@
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import os
-import sys
-import traceback
-import sqlite3
-from datetime import datetime, timedelta
+import requests  # للـ APIs مثل Shopify
+from datetime import datetime
 
-# إصلاح المسارات للنشر على Vercel
-current_dir = os.path.dirname(os.path.abspath(__file__))
-if current_dir not in sys.path:
-    sys.path.insert(0, current_dir)
+app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', 'dev_secret_key_change_this_in_production')  # غيرها في env
 
-print(f"✅ المسار الحالي: {current_dir}")
+# بيانات وهمية للإحصائيات (هتتحدث من DB لاحقًا، مثل Supabase)
+MOCK_SERVICES = {
+    'facebook': True,
+    'whatsapp': True,
+    'shopify': True,
+    'openai': True,
+    'deepseek': False,
+    'grok': True
+}
 
-try:
-    from flask import Flask, render_template, request, jsonify, redirect, url_for, session, flash
-    from functools import wraps
-    print("✅ تم استيراد مكتبات Flask بنجاح")
-except ImportError as e:
-    print(f"❌ خطأ في استيراد المكتبات: {e}")
-    # بديل طارئ
-    from flask import Flask
-    app = Flask(__name__)
-    
-    @app.route('/')
-    def fallback():
-        return "✅ التطبيق يعمل ولكن هناك مشكلة في الاستيراد"
-    
-    def handler(request, context):
-        return app(request.environ, lambda status, headers: [])
-    
-    # إنهاء التنفيذ إذا فشل الاستيراد
-    import sys
-    sys.exit(1)
+MOCK_STATS = {
+    'today_messages': 25,
+    'today_comments': 15,
+    'new_orders': 10,
+    'active_agents': 5,
+    'activeDelegates': 8,
+    'totalClosures': 2000,
+    'todayRequests': 12,
+    'alerts': ['زيادة في المرتجعات 20% - اقتراح AI: أضف مندوبًا جديدًا للقاهرة']
+}
 
-# تهيئة التطبيق
-app = Flask(
-    __name__,
-    template_folder=os.path.join(current_dir, 'templates'),
-    static_folder=os.path.join(current_dir, 'static')
-)
-app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-123456789')
-
-# ديكورات التحقق من الدخول
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'logged_in' not in session:
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-# Routes الأساسية
-@app.route('/')
-def index():
-    try:
-        return redirect('/admin/dashboard')
-    except Exception as e:
-        return f"❌ خطأ في الصفحة الرئيسية: {str(e)}"
-
+# Route الرئيسي - صفحة الدخول
+@app.route('/', methods=['GET', 'POST'])
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    try:
-        if request.method == 'POST':
-            password = request.form.get('password')
-            if password == 'admin123':
-                session['logged_in'] = True
-                return redirect('/admin/dashboard')
-            else:
-                return render_template('login.html', error='كلمة المرور غير صحيحة')
-        return render_template('login.html')
-    except Exception as e:
-        return f"❌ خطأ في صفحة Login: {str(e)}"
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        
+        # تحقق بسيط (غير لـ DB حقيقي أو bcrypt للأمان)
+        if username == 'admin' and password == '123456':  # غير الباسورد في الإنتاج
+            session['logged_in'] = True
+            session['username'] = username
+            flash('تم تسجيل الدخول بنجاح!', 'success')
+            return redirect(url_for('dashboard'))  # نقل فوري للداشبورد
+        
+        flash('بيانات خاطئة، يرجى المحاولة مرة أخرى.', 'error')
+    
+    if session.get('logged_in'):
+        return redirect(url_for('dashboard'))
+    
+    return render_template('login.html')  # افترض templates/login.html موجود
 
+# Route الداشبورد
+@app.route('/dashboard')
+def dashboard():
+    if not session.get('logged_in'):
+        flash('يجب تسجيل الدخول أولاً.', 'error')
+        return redirect(url_for('login'))
+    
+    # تمرير البيانات للـ template
+    return render_template('dashboard.html',
+                          today_messages=MOCK_STATS['today_messages'],
+                          today_comments=MOCK_STATS['today_comments'],
+                          new_orders=MOCK_STATS['new_orders'],
+                          active_agents=MOCK_STATS['active_agents'],
+                          services=MOCK_SERVICES,
+                          shopify_token=os.getenv('SHOPIFY_TOKEN', ''))
+
+# Route الخروج
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect('/login')
+    flash('تم تسجيل الخروج بنجاح.', 'info')
+    return redirect(url_for('login'))
 
-# لوحة التحكم
-@app.route('/admin/dashboard')
-@login_required
-def dashboard():
+# API للإحصائيات الداخلية
+@app.route('/api/stats')
+def get_stats():
+    return jsonify(MOCK_STATS)
+
+# API لـ Shopify stats
+@app.route('/api/shopify/stats')
+def shopify_stats():
+    token = os.getenv('SHOPIFY_TOKEN')
+    if not token:
+        return jsonify({'orders': 0, 'error': 'Token missing'})
+    
     try:
-        # بيانات تجريبية
-        services = {
-            'facebook': True,
-            'whatsapp': True,
-            'googlesheet': False,
-            'openai': True,
-            'deepseek': False
-        }
-        
-        return render_template('dashboard.html', 
-                             today_messages=150,
-                             today_comments=45,
-                             new_orders=12,
-                             active_agents=5,
-                             services=services)
+        headers = {'X-Shopify-Access-Token': token}
+        response = requests.get('https://free-move-eg.myshopify.com/admin/api/2023-10/orders.json?status=any&limit=250', headers=headers, timeout=5)
+        if response.ok:
+            data = response.json()
+            return jsonify({'orders': len(data.get('orders', []))})
+        else:
+            return jsonify({'orders': 0, 'error': 'API error'})
     except Exception as e:
-        return f"❌ خطأ في لوحة التحكم: {str(e)}"
+        return jsonify({'orders': 0, 'error': str(e)})
 
-# صفحات الإعدادات
-@app.route('/admin/facebook')
-@login_required
-def facebook_settings():
-    try:
-        return render_template('facebook.html')
-    except Exception as e:
-        return f"❌ خطأ في صفحة فيسبوك: {str(e)}"
+# API للمساعد الذكي (bot)
+@app.route('/api/bot', methods=['POST'])
+def bot():
+    data = request.get_json()
+    message = data.get('message', '')
+    api = data.get('api', 'grok')  # أو 'deepseek' أو 'openai'
+    
+    # رد بسيط (غير لربط حقيقي مع API مثل requests.post('https://api.x.ai/v1/chat/completions'))
+    if api == 'grok':
+        reply = f"رد ذكي من Grok: بناءً على '{message}'، اقتراحي: تحقق من الطلبات الجديدة في Shopify. عدد الطلبات: {MOCK_STATS['todayRequests']}."
+    else:
+        reply = f"رد من {api}: تم تحليل الرسالة '{message}'."
+    
+    return jsonify({'reply': reply})
 
-@app.route('/admin/whatsapp')
-@login_required
-def whatsapp_settings():
-    try:
-        return render_template('whatsapp.html')
-    except Exception as e:
-        return f"❌ خطأ في صفحة واتساب: {str(e)}"
+# API لإيقاف جميع السير
+@app.route('/api/workflow/stop-all', methods=['POST'])
+def stop_all_workflow():
+    # هنا كود الإيقاف (مثل تحديث DB أو flag في Redis/Vercel KV)
+    print("إيقاف جميع السير العمليات!")  # log
+    return jsonify({'message': 'تم إيقاف جميع السير العمليات بنجاح! سيتم إعادة التشغيل تلقائيًا بعد 5 دقائق.'})
 
-@app.route('/admin/googlesheet')
-@login_required
-def googlesheet_settings():
-    try:
-        return render_template('googlesheet.html')
-    except Exception as e:
-        return f"❌ خطأ في صفحة جوجل شيتس: {str(e)}"
+# API لحل التنبيهات
+@app.route('/api/alerts/resolve', methods=['POST'])
+def resolve_alert():
+    data = request.get_json()
+    alert = data.get('alert', '')
+    # حفظ في log أو DB
+    print(f"حُل التنبيه: {alert}")
+    MOCK_STATS['alerts'] = [a for a in MOCK_STATS['alerts'] if a != alert]  # إزالة مؤقتة
+    return jsonify({'status': 'resolved'})
 
-@app.route('/admin/ai')
-@login_required
-def ai_settings():
-    try:
-        return render_template('ai.html')
-    except Exception as e:
-        return f"❌ خطأ في صفحة الذكاء الاصطناعي: {str(e)}"
-
-# إدارة الطلبات
-@app.route('/admin/orders')
-@login_required
-def orders():
-    try:
-        # بيانات تجريبية للطلبات
-        orders_data = [
-            [1, 'ORD-001', 'أحمد محمد', '0512345678', 'منتج أ', 2, 'new', None, '2024-01-15 10:30:00', None, None],
-            [2, 'ORD-002', 'فاطمة علي', '0556789012', 'منتج ب', 1, 'assigned', 'AG001', '2024-01-15 11:15:00', None, 'المندوب 1'],
-        ]
-        
-        # بيانات تجريبية للمندوبين
-        agents_data = [
-            [1, 'AG001', 'المندوب 1', '0512345678', 'agent1@email.com', 'password', 1, 5, '2024-01-01'],
-        ]
-        
-        return render_template('orders.html', orders=orders_data, agents=agents_data)
-    except Exception as e:
-        return f"❌ خطأ في صفحة الطلبات: {str(e)}"
-
-# إدارة المناديب
-@app.route('/admin/agents')
-@login_required
-def agents():
-    try:
-        # بيانات تجريبية للمندوبين
-        agents_data = [
-            [1, 'AG001', 'المندوب 1', '0512345678', 'agent1@email.com', 'password', 1, 5, '2024-01-01'],
-            [2, 'AG002', 'المندوب 2', '0556789012', 'agent2@email.com', 'password', 1, 3, '2024-01-01'],
-        ]
-        
-        return render_template('agents.html', agents=agents_data)
-    except Exception as e:
-        return f"❌ خطأ في صفحة المناديب: {str(e)}"
-
-# واجهة المندوب
-@app.route('/agent')
-def agent_login():
-    try:
-        return render_template('agent_login.html')
-    except Exception as e:
-        return f"❌ خطأ في صفحة دخول المندوب: {str(e)}"
-
-@app.route('/agent/dashboard')
-def agent_dashboard():
-    try:
-        agent_id = request.args.get('agent_id')
-        
-        # بيانات تجريبية للمندوب
-        agent = [1, 'AG001', 'المندوب 1', '0512345678', 'agent1@email.com', 'password', 1, 5, '2024-01-01']
-        
-        # بيانات تجريبية للطلبات
-        orders_data = [
-            [1, 'ORD-001', 'أحمد محمد', '0512345678', 'منتج أ', 2, 'assigned', 'AG001', '2024-01-15 10:30:00', None, None],
-        ]
-        
-        return render_template('agent_dashboard.html', agent=agent, orders=orders_data)
-    except Exception as e:
-        return f"❌ خطأ في لوحة المندوب: {str(e)}"
-
-# APIs
-@app.route('/api/ask', methods=['POST'])
-def ask_ai():
-    try:
-        data = request.json
-        question = data.get('question', '')
-        
-        # رد تجريبي
-        response = "أنا المساعد الذكي للنظام. يمكنني مساعدتك في إدارة الطلبات، المناديب، وإعدادات الخدمات."
-        
-        return jsonify({'response': response})
-    except Exception as e:
-        return jsonify({'response': f'خطأ: {str(e)}'})
-
-@app.route('/admin/test-connection', methods=['POST'])
-@login_required
-def test_connection():
-    try:
-        service = request.json.get('service', '')
-        return jsonify({
-            'status': 'success',
-            'message': f'الاتصال بـ {service} يعمل بشكل صحيح'
-        })
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'خطأ في الاختبار: {str(e)}'
-        })
-
-@app.route('/admin/agents/add', methods=['POST'])
-@login_required
-def add_agent():
-    try:
-        data = request.json
-        return jsonify({
-            'status': 'success',
-            'agent_id': 'AG00' + str(datetime.now().strftime('%H%M%S'))
-        })
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'خطأ في إضافة المندوب: {str(e)}'
-        })
-
-@app.route('/admin/orders/assign', methods=['POST'])
-@login_required
-def assign_order():
-    try:
-        data = request.json
+# API لتبديل الخدمات (toggle-service)
+@app.route('/admin/toggle-service', methods=['POST'])
+def toggle_service():
+    data = request.get_json()
+    service = data.get('service')
+    status = data.get('status')
+    
+    if service in MOCK_SERVICES:
+        MOCK_SERVICES[service] = status
         return jsonify({'status': 'success'})
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'خطأ في إسناد الطلب: {str(e)}'
-        })
+    
+    return jsonify({'status': 'error', 'message': 'خدمة غير موجودة'})
 
-# صفحة الاختبار
-@app.route('/test')
-def test_page():
-    return "✅ التطبيق يعمل بنجاح! جميع الأنظمة جاهزة."
+# Routes placeholders للأقسام الأخرى (عشان التنقل يشتغل، أضف templates ليها لاحقًا)
+@app.route('/connections')
+def connections():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    return render_template('connections.html', services=MOCK_SERVICES)
 
-# معالجة الأخطاء
-@app.errorhandler(404)
-def not_found(error):
-    return "❌ الصفحة غير موجودة", 404
+@app.route('/requests')
+def requests():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    return render_template('requests.html')
 
-@app.errorhandler(500)
-def internal_error(error):
-    return "❌ خطأ داخلي في الخادم", 500
+@app.route('/delegates')
+def delegates():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    return render_template('delegates.html')
 
+@app.route('/accounts')
+def accounts():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    return render_template('accounts.html')
+
+@app.route('/workflow')
+def workflow():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    return render_template('workflow.html')
+
+@app.route('/messages')
+def messages():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    return render_template('messages.html')
+
+# تشغيل التطبيق
 if __name__ == '__main__':
-    print("🚀 بدء تشغيل التطبيق...")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True)
+else:
+    # لـ Vercel، استخدم gunicorn أو vercel.json
+    application = app
