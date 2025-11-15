@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}المناديب - لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">إدارة المناديب</h1>
+    <p class="text-gray-600 mb-6">تطبيق خفيف للمناديب، إشعارات مخصصة، وتقارير أداء.</p>
+
+    <!-- فلاتر -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <select class="p-2 border rounded">
+                <option>الحالة</option>
+                <option>نشط</option>
+                <option>معطل</option>
+            </select>
+            <input type="text" class="p-2 border rounded" placeholder="بحث بالاسم">
+            <button onclick="filterDelegates()" class="bg-blue-500 text-white px-4 py-2 rounded">فلتر</button>
+        </div>
+        <button onclick="addDelegate()" class="bg-green-500 text-white px-4 py-2 rounded mt-2">إضافة مندوب</button>
+    </div>
+
+    <!-- جدول المناديب -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="p-3 text-right">الاسم</th>
+                    <th class="p-3 text-right">الجوال</th>
+                    <th class="p-3 text-right">عدد الطلبات</th>
+                    <th class="p-3 text-right">التقييم</th>
+                    <th class="p-3 text-right">الحالة</th>
+                    <th class="p-3 text-right">إجراءات</th>
+                </tr>
+            </thead>
+            <tbody id="delegates-table">
+                <tr>
+                    <td class="p-3">أحمد علي</td>
+                    <td class="p-3">0123456789</td>
+                    <td class="p-3">25 (اليوم)</td>
+                    <td class="p-3">4.5/5</td>
+                    <td class="p-3"><span class="bg-green-100 px-2 py-1 rounded">نشط</span></td>
+                    <td class="p-3">
+                        <button onclick="editDelegate('1')" class="bg-blue-500 text-white px-2 py-1 rounded mr-1">تعديل</button>
+                        <button onclick="viewPerformance('1')" class="bg-yellow-500 text-white px-2 py-1 rounded mr-1">أداء</button>
+                        <button onclick="sendNotification('1')" class="bg-purple-500 text-white px-2 py-1 rounded">إشعار</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- إشعارات مخصصة -->
+    <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+        <h3 class="font-bold mb-4">إشعارات للمناديب</h3>
+        <select id="delegate-select" class="p-2 border rounded mb-2">
+            <option>اختر مندوب</option>
+            <option value="1">أحمد علي</option>
+        </select>
+        <input type="text" id="notification-text" placeholder="نص الإشعار" class="w-full p-2 border rounded mb-2">
+        <input type="datetime-local" id="notification-time" class="p-2 border rounded mb-2">
+        <button onclick="sendCustomNotification()" class="bg-purple-500 text-white px-4 py-2 rounded">إرسال في الموعد</button>
+    </div>
+
+    <!-- تطبيق المناديب الخفيف -->
+    <div class="bg-gray-50 rounded-lg p-6 mt-6">
+        <h3 class="font-bold mb-4">تطبيق المناديب (PWA)</h3>
+        <p>رابط التطبيق: <a href="/delegate-app" class="text-blue-600"> /delegate-app </a> (ملخص التسليمات، خريطة، GPS).</p>
+        <button onclick="openPWA()" class="bg-blue-500 text-white px-4 py-2 rounded">فتح التطبيق</button>
+    </div>
+</div>
+
+<script>
+    function filterDelegates() {
+        alert('تم الفلترة');
+    }
+
+    function addDelegate() {
+        alert('فتح نموذج إضافة مندوب');
+    }
+
+    function editDelegate(id) {
+        alert(`تعديل مندوب ${id}`);
+    }
+
+    function viewPerformance(id) {
+        alert(`عرض أداء مندوب ${id}`);
+    }
+
+    function sendNotification(id) {
+        const text = prompt('نص الإشعار:');
+        alert(`أرسل إشعار لـ ${id}: ${text}`);
+    }
+
+    function sendCustomNotification() {
+        const id = document.getElementById('delegate-select').value;
+        const text = document.getElementById('notification-text').value;
+        const time = document.getElementById('notification-time').value;
+        if (!id || !text) return alert('أدخل البيانات');
+        alert(`إشعار لـ ${id}: ${text} في ${time}`);
+        // fetch('/api/notifications/send')
+    }
+
+    function openPWA() {
+        window.open('/delegate-app', '_blank');
+    }
+
+    // تحميل المناديب
+    fetch('/api/delegates')
+        .then(res => res.json())
+        .then(data => {
+            const table = document.getElementById('delegates-table');
+            table.innerHTML = data.delegates.map(del => `
+                <tr>
+                    <td class="p-3">${del.name}</td>
+                    <td class="p-3">${del.phone}</td>
+                    <td class="p-3">${del.deliveries}</td>
+                    <td class="p-3">${del.rating}</td>
+                    <td class="p-3"><span class="bg-${del.active ? 'green' : 'red'}-100 px-2 py-1 rounded">${del.status}</span></td>
+                    <td class="p-3">
+                        <button onclick="editDelegate('${del.id}')" class="bg-blue-500 text-white px-2 py-1 rounded mr-1">تعديل</button>
+                        <button onclick="viewPerformance('${del.id}')" class="bg-yellow-500 text-white px-2 py-1 rounded mr-1">أداء</button>
+                        <button onclick="sendNotification('${del.id}')" class="bg-purple-500 text-white px-2 py-1 rounded">إشعار</button>
+                    </td>
+                </tr>
+            `).join('');
+        });
+</script>
+{% endblock %}
