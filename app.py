@@ -34,8 +34,8 @@ def login():
 
 @app.route('/dashboard')
 def dashboard():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
+    # # if not session.get('logged_in'):  # علقت مؤقتًا عشان تدخل مباشرة
+    # #     return redirect(url_for('login'))
     return render_template('dashboard.html',
                           today_messages=MOCK_STATS['today_messages'],
                           today_comments=MOCK_STATS['today_comments'],
@@ -96,12 +96,12 @@ def toggle_service():
         return jsonify({'status': 'success'})
     return jsonify({'status': 'error'})
 
-# Placeholders للأقسام
+# Placeholders for other pages (علقت اللوجين مؤقتًا)
 for page in ['connections', 'requests', 'delegates', 'accounts', 'workflow', 'messages']:
     @app.route(f'/{page}')
     def route_placeholder():
-        if not session.get('logged_in'):
-            return redirect(url_for('login'))
+        # # if not session.get('logged_in'):
+        # #     return redirect(url_for('login'))
         return render_template(f'{page}.html')
 
 if __name__ == '__main__':
