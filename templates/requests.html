@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}الطلبات - لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">إدارة الطلبات</h1>
+    <p class="text-gray-600 mb-6">تسجيل الطلبات في محافظ منفصلة للمناديب، مع ملخص ومخزون.</p>
+
+    <!-- فلاتر والبحث -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <select class="p-2 border rounded">
+                <option>الحالة</option>
+                <option>جديد</option>
+                <option>قيد التنفيذ</option>
+                <option>مكتمل</option>
+            </select>
+            <select class="p-2 border rounded">
+                <option>المندوب</option>
+                <option>مندوب 1</option>
+                <option>مندوب 2</option>
+            </select>
+            <input type="date" class="p-2 border rounded" placeholder="التاريخ">
+            <input type="text" class="p-2 border rounded" placeholder="بحث بالرقم أو اسم">
+        </div>
+        <button onclick="filterRequests()" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">فلتر</button>
+        <button onclick="addNewRequest()" class="bg-green-500 text-white px-4 py-2 rounded mt-2 ml-2">طلب جديد</button>
+    </div>
+
+    <!-- جدول الطلبات -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="p-3 text-right">رقم الطلب</th>
+                    <th class="p-3 text-right">العميل</th>
+                    <th class="p-3 text-right">المحافظة</th>
+                    <th class="p-3 text-right">المندوب</th>
+                    <th class="p-3 text-right">الحالة</th>
+                    <th class="p-3 text-right">التاريخ</th>
+                    <th class="p-3 text-right">إجراءات</th>
+                </tr>
+            </thead>
+            <tbody id="requests-table">
+                <tr>
+                    <td class="p-3">001</td>
+                    <td class="p-3">أحمد محمد</td>
+                    <td class="p-3">القاهرة</td>
+                    <td class="p-3">مندوب 1</td>
+                    <td class="p-3"><span class="bg-yellow-100 px-2 py-1 rounded">قيد التنفيذ</span></td>
+                    <td class="p-3">2024-11-15</td>
+                    <td class="p-3">
+                        <button onclick="viewDetails('001')" class="bg-blue-500 text-white px-2 py-1 rounded mr-1">عرض</button>
+                        <button onclick="assignDelegate('001')" class="bg-green-500 text-white px-2 py-1 rounded mr-1">تعيين</button>
+                    </td>
+                </tr>
+                <!-- المزيد من الصفوف هتتحمل ديناميكيًا -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- المخزون المختصر -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="font-bold mb-4">المخزون</h3>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr>
+                        <th class="p-2">المنتج</th>
+                        <th class="p-2">الحجم</th>
+                        <th class="p-2">العدد</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="p-2">Knee Patches</td>
+                        <td class="p-2">كبير</td>
+                        <td class="p-2">50</td>
+                    </tr>
+                    <tr>
+                        <td class="p-2">Back Patches</td>
+                        <td class="p-2">صغير</td>
+                        <td class="p-2">30</td>
+                    </tr>
+                </tbody>
+            </table>
+            <button onclick="addProduct()" class="bg-blue-500 text-white px-4 py-2 rounded mt-2">إضافة منتج</button>
+            <button onclick="deleteProduct()" class="bg-red-500 text-white px-4 py-2 rounded mt-2 ml-2">حذف</button>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="font-bold mb-4">ملخص الطلبات</h3>
+            <p>إجمالي: 45 طلب</p>
+            <p>اليوم: 12 طلب</p>
+            <p>قيد التنفيذ: 8</p>
+            <button onclick="exportSummary()" class="bg-green-500 text-white px-4 py-2 rounded mt-2">تصدير PDF</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterRequests() {
+        // فلتر الجدول
+        alert('تم الفلترة');
+        // fetch('/api/requests/filter', ...) للديناميك
+    }
+
+    function addNewRequest() {
+        // فتح نموذج طلب جديد
+        alert('فتح نموذج طلب جديد');
+    }
+
+    function viewDetails(id) {
+        alert(`عرض تفاصيل الطلب ${id}`);
+    }
+
+    function assignDelegate(id) {
+        alert(`تعيين مندوب للطلب ${id}`);
+    }
+
+    function addProduct() {
+        // نموذج إضافة منتج
+        const name = prompt('اسم المنتج:');
+        const size = prompt('الحجم (كبير/صغير):');
+        const quantity = prompt('العدد:');
+        alert(`أضفت: ${name} - ${size} - ${quantity}`);
+    }
+
+    function deleteProduct() {
+        const id = prompt('رقم المنتج لحذفه:');
+        alert(`حُذف المنتج ${id}`);
+    }
+
+    function exportSummary() {
+        alert('تصدير PDF للملخص');
+        // fetch('/api/requests/export')
+    }
+
+    // تحميل الطلبات
+    fetch('/api/requests')
+        .then(res => res.json())
+        .then(data => {
+            const table = document.getElementById('requests-table');
+            table.innerHTML = data.requests.map(req => `
+                <tr>
+                    <td class="p-3">${req.id}</td>
+                    <td class="p-3">${req.client}</td>
+                    <td class="p-3">${req.governorate}</td>
+                    <td class="p-3">${req.delegate}</td>
+                    <td class="p-3"><span class="bg-${req.status === 'جديد' ? 'yellow' : 'green'}-100 px-2 py-1 rounded">${req.status}</span></td>
+                    <td class="p-3">${req.date}</td>
+                    <td class="p-3">
+                        <button onclick="viewDetails('${req.id}')" class="bg-blue-500 text-white px-2 py-1 rounded mr-1">عرض</button>
+                        <button onclick="assignDelegate('${req.id}')" class="bg-green-500 text-white px-2 py-1 rounded">تعيين</button>
+                    </td>
+                </tr>
+            `).join('');
+        });
+</script>
+{% endblock %}
