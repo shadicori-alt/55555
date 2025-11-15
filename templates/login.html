@@ -3,21 +3,50 @@
 <head>
     <title>تسجيل الدخول</title>
     <meta charset="UTF-8">
-    <style>body { font-family: Arial; text-align: center; padding: 50px; } form { max-width: 300px; margin: auto; }</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: Arial; text-align: center; padding: 50px; background: #f3f4f6; }
+        form { max-width: 300px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #2563eb; }
+        button:active { transform: scale(0.98); } /* انطباق بصري عشان تشعر بالضغط */
+        .error { color: red; padding: 10px; background: #fee2e2; border-radius: 4px; margin: 10px 0; }
+        .success { color: green; padding: 10px; background: #d1fae5; border-radius: 4px; margin: 10px 0; }
+    </style>
 </head>
 <body>
-    <h1>تسجيل الدخول</h1>
+    <h1 class="text-2xl font-bold mb-4">تسجيل الدخول</h1>
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <p style="color: {{ 'green' if category == 'success' else 'red' }}">{{ message }}</p>
+                <div class="{{ 'success' if category == 'success' else 'error' }}">{{ message }}</div>
             {% endfor %}
         {% endif %}
     {% endwith %}
-    <form method="POST">
-        <input type="text" name="username" placeholder="اسم المستخدم (admin)" required><br><br>
-        <input type="password" name="password" placeholder="كلمة المرور (123456)" required><br><br>
+    <form method="POST" action="{{ url_for('login') }}" onsubmit="return validateForm()">
+        <input type="text" name="username" placeholder="اسم المستخدم (admin)" required value="admin">
+        <br>
+        <input type="password" name="password" placeholder="كلمة المرور (123456)" required>
+        <br>
         <button type="submit">دخول</button>
     </form>
+
+    <script>
+        function validateForm() {
+            const pass = document.querySelector('input[name="password"]').value;
+            if (pass === '') {
+                alert('أدخل كلمة المرور!');
+                return false;
+            }
+            return true;
+        }
+        // تأكيد الضغط بصريًا
+        document.querySelector('button').addEventListener('click', function() {
+            this.style.transform = 'scale(0.98)';
+            setTimeout(() => { this.style.transform = 'scale(1)'; }, 100);
+        });
+    </script>
 </body>
 </html>
