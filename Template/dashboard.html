@@ -1,133 +1,346 @@
-// pages/dashboard.js - اللوحة الرئيسية الجديدة (مع إحصائيات، تنبيهات AI، وأزرار سريعة)
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+{% extends "base.html" %}
 
-// كومبوننت الإحصائيات (بيانات وهمية، هتتحدث من API)
-const StatsCard = ({ title, value, change, color = 'blue' }) => (
-  <div className={`bg-${color}-100 p-4 rounded-lg shadow-md`}>
-    <h3 className="text-sm font-medium text-gray-600">{title}</h3>
-    <p className="text-2xl font-bold text-gray-900">{value}</p>
-    <p className={`text-sm ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-      {change >= 0 ? '+' : ''}{change}% من اليوم السابق
-    </p>
-  </div>
-);
+{% block title %}الإحصائيات - لوحة التحكم{% endblock %}
 
-// كومبوننت التنبيهات (من AI أو السير)
-const Alerts = ({ alerts }) => (
-  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-    <h3 className="font-medium text-yellow-800 mb-2">تنبيهات AI:</h3>
-    <ul className="space-y-1 text-sm text-yellow-700">
-      {alerts.map((alert, index) => (
-        <li key={index} className="flex items-center">
-          ⚠️ {alert}
-          <button className="ml-2 text-blue-600 hover:underline">حل</button>
-        </li>
-      ))}
-    </ul>
-  </div>
-);
-
-// كومبوننت الاقتراحات السريعة
-const QuickActions = () => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <Link to="/requests" className="bg-green-500 text-white p-4 rounded-lg text-center hover:bg-green-600">
-      📋 طلب جديد
-    </Link>
-    <Link to="/messages" className="bg-blue-500 text-white p-4 rounded-lg text-center hover:bg-blue-600">
-      💬 رد على رسائل
-    </Link>
-    <button className="bg-purple-500 text-white p-4 rounded-lg text-center hover:bg-purple-600" onClick={() => alert('إرسال تقرير يومي عبر المساعد')}>
-      📊 تقرير اليوم
-    </button>
-  </div>
-);
-
-const Dashboard = ({ stats: initialStats }) => {
-  const [stats, setStats] = useState(initialStats);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // جلب بيانات حقيقية من API (مثل Shopify للمخزون، أو Vercel KV للإحصائيات)
-    const fetchStats = async () => {
-      try {
-        // مثال: جلب من Shopify لعدد الطلبات
-        const shopifyResponse = await fetch('https://free-move-eg.myshopify.com/admin/api/2023-10/orders.json?status=any&limit=1', {
-          headers: {
-            'X-Shopify-Access-Token': process.env.SHOPIFY_TOKEN || 'your-token-here', // من Vercel env
-            'Content-Type': 'application/json'
-          }
-        });
-        const shopifyData = await shopifyResponse.json();
-        
-        // جلب إحصائيات عامة من API داخلي
-        const internalResponse = await fetch('/api/stats');
-        const internalData = await internalResponse.json();
-
-        // دمج البيانات (مثال بسيط)
-        setStats({
-          requests: { total: shopifyData.orders.length || 45, today: 12 },
-          delegates: { active: internalData.activeDelegates || 8, deliveries: 120 },
-          closures: { pending: 5, total: 2000 },
-          alerts: internalData.alerts || ['زيادة في المرتجعات 20% - اقتراح AI: أضف مندوبًا جديدًا للقاهرة']
-        });
-      } catch (error) {
-        console.error('خطأ في جلب الإحصائيات:', error);
-        // استخدم البيانات الوهمية كـ fallback
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
-
-  if (loading) {
-    return <div className="flex justify-center items-center h-64">جاري تحميل الإحصائيات...</div>;
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* عنوان اللوحة */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900">مرحباً بك في اللوحة الرئيسية</h2>
-        <button 
-          className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-          onClick={() => {
-            // أمر للمساعد: عرض تقرير مفصل
-            fetch('/api/bot', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ message: 'عرض تقرير اليوم الكامل', api: 'grok' })
-            }).then(res => res.json()).then(data => alert(data.reply));
-          }}
-        >
-          🤖 استشر المساعد
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- عنوان الصفحة -->
+    <div class="mb-8">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">لوحة التحكم</h1>
+                <p class="text-gray-600">مرحباً بك في نظام إدارة التواصل الذكي</p>
+            </div>
+            <button onclick="consultAssistant()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm">
+                <i class="fas fa-robot ml-2"></i>
+                🤖 استشر المساعد
+            </button>
+        </div>
+        <button onclick="explainPage()" class="mt-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
+            <i class="fas fa-question-circle ml-2"></i>
+            اشرح لي هذه الصفحة
         </button>
-      </div>
-
-      {/* الإحصائيات الرئيسية */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatsCard title="الطلبات الكلية" value={stats.requests.total} change={5} color="green" />
-        <StatsCard title="المناديب النشطين" value={stats.delegates.active} change={2} color="blue" />
-        <StatsCard title="إجمالي التقفيلات" value={`${stats.closures.total} جنيه`} change={-3} color="purple" />
-      </div>
-
-      {/* التنبيهات */}
-      {stats.alerts.length > 0 && <Alerts alerts={stats.alerts} />}
-
-      {/* الإجراءات السريعة */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-medium mb-4">إجراءات سريعة</h3>
-        <QuickActions />
-      </div>
-
-      {/* زر الإيقاف العام (للسير العمل) */}
-      <div className="bg-red-50 border border-red-200 p-4 rounded">
-        <p className="text-red-800">🛑 للإيقاف الطارئ لأي سير عملية، اضغط <button className="bg-red-500 text-white px-2 py-1 rounded ml-1" onClick={() => alert('تم إيقاف جميع السير - سيتم إعادة التشغيل التلقائي بعد 5 دقائق')}>هنا</button></p>
-      </div>
     </div>
-  );
-};
 
-export default Dashboard;
+    <!-- بطاقات الإحصائيات الرئيسية -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="stats-grid">
+        <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">الطلبات الكلية</p>
+                    <p class="text-2xl font-bold text-blue-600" id="total-requests">{{ today_messages }}</p>
+                    <p class="text-sm text-green-600">+5% من اليوم السابق</p>
+                </div>
+                <div class="bg-blue-100 p-3 rounded-full">
+                    <i class="fas fa-shopping-cart text-blue-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">المناديب النشطين</p>
+                    <p class="text-2xl font-bold text-green-600" id="active-delegates">{{ today_comments }}</p>
+                    <p class="text-sm text-green-600">+2% من اليوم السابق</p>
+                </div>
+                <div class="bg-green-100 p-3 rounded-full">
+                    <i class="fas fa-users text-green-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">إجمالي التقفيلات</p>
+                    <p class="text-2xl font-bold text-orange-600" id="total-closures">{{ new_orders }} جنيه</p>
+                    <p class="text-sm text-red-600">-3% من اليوم السابق</p>
+                </div>
+                <div class="bg-orange-100 p-3 rounded-full">
+                    <i class="fas fa-money-bill-wave text-orange-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">طلبات اليوم</p>
+                    <p class="text-2xl font-bold text-purple-600" id="today-requests">{{ active_agents }}</p>
+                    <p class="text-sm text-green-600">+10% من الأمس</p>
+                </div>
+                <div class="bg-purple-100 p-3 rounded-full">
+                    <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- التنبيهات -->
+    <div id="alerts-section" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 hidden">
+        <h3 class="font-medium text-yellow-800 mb-2">تنبيهات AI:</h3>
+        <ul id="alerts-list" class="space-y-1 text-sm text-yellow-700">
+            <!-- ديناميكي -->
+        </ul>
+    </div>
+
+    <!-- حالة الخدمات -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">حالة الخدمات</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="service-card {% if services.facebook %}active{% endif %} rounded-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <i class="fab fa-facebook text-blue-600 text-2xl ml-3"></i>
+                        <span class="font-semibold text-gray-800">فيسبوك ماسنجر</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="facebook-toggle" {% if services.facebook %}checked{% endif %} onchange="toggleService('facebook')">
+                            <span class="slider"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <span class="status-indicator {% if services.facebook %}text-green-600{% else %}text-red-600{% endif %}">
+                        <i class="fas fa-circle"></i>
+                        {% if services.facebook %}نشط{% else %}معطل{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div class="service-card {% if services.whatsapp %}active{% endif %} rounded-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <i class="fab fa-whatsapp text-green-600 text-2xl ml-3"></i>
+                        <span class="font-semibold text-gray-800">واتساب</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="whatsapp-toggle" {% if services.whatsapp %}checked{% endif %} onchange="toggleService('whatsapp')">
+                            <span class="slider"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <span class="status-indicator {% if services.whatsapp %}text-green-600{% else %}text-red-600{% endif %}">
+                        <i class="fas fa-circle"></i>
+                        {% if services.whatsapp %}نشط{% else %}معطل{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div class="service-card {% if services.shopify %}active{% endif %} rounded-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <i class="fas fa-store text-indigo-600 text-2xl ml-3"></i>
+                        <span class="font-semibold text-gray-800">Shopify</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="shopify-toggle" {% if services.shopify %}checked{% endif %} onchange="toggleService('shopify')">
+                            <span class="slider"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <span class="status-indicator {% if services.shopify %}text-green-600{% else %}text-red-600{% endif %}">
+                        <i class="fas fa-circle"></i>
+                        {% if services.shopify %}نشط{% else %}معطل{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div class="service-card {% if services.openai %}active{% endif %} rounded-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <i class="fas fa-robot text-purple-600 text-2xl ml-3"></i>
+                        <span class="font-semibold text-gray-800">OpenAI</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="openai-toggle" {% if services.openai %}checked{% endif %} onchange="toggleService('openai')">
+                            <span class="slider"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <span class="status-indicator {% if services.openai %}text-green-600{% else %}text-red-600{% endif %}">
+                        <i class="fas fa-circle"></i>
+                        {% if services.openai %}نشط{% else %}معطل{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div class="service-card {% if services.deepseek %}active{% endif %} rounded-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <i class="fas fa-brain text-indigo-600 text-2xl ml-3"></i>
+                        <span class="font-semibold text-gray-800">DeepSeek</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="deepseek-toggle" {% if services.deepseek %}checked{% endif %} onchange="toggleService('deepseek')">
+                            <span class="slider"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <span class="status-indicator {% if services.deepseek %}text-green-600{% else %}text-red-600{% endif %}">
+                        <i class="fas fa-circle"></i>
+                        {% if services.deepseek %}نشط{% else %}معطل{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div class="service-card {% if services.grok %}active{% endif %} rounded-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <i class="fas fa-sparkles text-orange-600 text-2xl ml-3"></i>
+                        <span class="font-semibold text-gray-800">Grok (xAI)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="toggle-switch">
+                            <input type="checkbox" id="grok-toggle" {% if services.grok %}checked{% endif %} onchange="toggleService('grok')">
+                            <span class="slider"></span>
+                        </span>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <span class="status-indicator {% if services.grok %}text-green-600{% else %}text-red-600{% endif %}">
+                        <i class="fas fa-circle"></i>
+                        {% if services.grok %}نشط{% else %}معطل{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- روابط سريعة -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">روابط سريعة</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <a href="{{ url_for('connections') }}" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                <i class="fab fa-facebook text-blue-600 text-xl ml-3"></i>
+                <span class="font-medium text-gray-800">إعدادات فيسبوك</span>
+            </a>
+            
+            <a href="{{ url_for('requests') }}" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                <i class="fab fa-whatsapp text-green-600 text-xl ml-3"></i>
+                <span class="font-medium text-gray-800">إدارة الطلبات</span>
+            </a>
+            
+            <a href="{{ url_for('delegates') }}" class="flex items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+                <i class="fas fa-shopping-cart text-orange-600 text-xl ml-3"></i>
+                <span class="font-medium text-gray-800">إدارة المناديب</span>
+            </a>
+            
+            <a href="{{ url_for('workflow') }}" class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                <i class="fas fa-cogs text-purple-600 text-xl ml-3"></i>
+                <span class="font-medium text-gray-800">سير العمل</span>
+            </a>
+
+            <button onclick="emergencyStop()" class="flex items-center p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                <i class="fas fa-stop text-red-600 text-xl ml-3"></i>
+                <span class="font-medium text-gray-800">🛑 إيقاف عام</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="loading-spinner" class="flex justify-center items-center h-32 hidden">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span class="ml-2">جاري تحميل الإحصائيات...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // جلب الإحصائيات
+    async function fetchStats() {
+        const spinner = document.getElementById('loading-spinner');
+        const grid = document.getElementById('stats-grid');
+        spinner.classList.remove('hidden');
+        grid.classList.add('opacity-50');
+
+        try {
+            const internalResponse = await fetch('/api/stats');
+            const internalData = await internalResponse.json();
+
+            document.getElementById('total-requests').textContent = internalData.todayRequests || 45;
+            document.getElementById('active-delegates').textContent = internalData.activeDelegates || 8;
+            document.getElementById('total-closures').textContent = `${internalData.totalClosures || 2000} جنيه`;
+            document.getElementById('today-requests').textContent = internalData.todayRequests || 12;
+
+            const alertsSection = document.getElementById('alerts-section');
+            const alertsList = document.getElementById('alerts-list');
+            if (internalData.alerts && internalData.alerts.length > 0) {
+                alertsList.innerHTML = internalData.alerts.map(alert => `<li class="flex items-center">⚠️ ${alert} <button class="ml-2 text-blue-600 hover:underline" onclick="resolveAlert('${alert}')">حل</button></li>`).join('');
+                alertsSection.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('خطأ:', error);
+        } finally {
+            spinner.classList.add('hidden');
+            grid.classList.remove('opacity-50');
+        }
+    }
+
+    window.addEventListener('load', fetchStats);
+
+    async function consultAssistant() {
+        const message = prompt('أمرك للمساعد:');
+        if (!message) return;
+        try {
+            const response = await fetch('/api/bot', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message, api: 'grok'})
+            });
+            const data = await response.json();
+            alert(data.reply);
+        } catch (error) {
+            alert('خطأ في المساعد');
+        }
+    }
+
+    function emergencyStop() {
+        if (confirm('تأكيد الإيقاف؟')) {
+            fetch('/api/workflow/stop-all', {method: 'POST'})
+                .then(res => res.json())
+                .then(data => alert(data.message));
+        }
+    }
+
+    function resolveAlert(alertText) {
+        fetch('/api/alerts/resolve', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({alert: alertText})
+        }).then(() => location.reload());
+    }
+
+    function toggleService(service) {
+        const toggle = document.getElementById(service + '-toggle');
+        const status = toggle.checked;
+        fetch('/admin/toggle-service', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({service, status})
+        }).then(res => res.json()).then(data => {
+            if (data.status === 'success') {
+                const card = toggle.closest('.service-card');
+                card.classList.toggle('active', status);
+            }
+        });
+    }
+
+    function explainPage() {
+        const input = document.getElementById('chatInput') || {value: ''};
+        input.value = 'اشرح لوحة التحكم';
+        // افترض sendMessage موجود في base.html
+        if (typeof sendMessage === 'function') sendMessage();
+    }
+</script>
+{% endblock %}
