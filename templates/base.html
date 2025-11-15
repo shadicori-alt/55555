@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}نظام الإدارة{% endblock %}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .toggle-switch { position: relative; display: inline-block; width: 60px; height: 34px; }
@@ -28,9 +28,12 @@
         <a href="{{ url_for('messages') }}" class="mr-4">الرسائل</a>
         <a href="{{ url_for('logout') }}">خروج</a>
     </nav>
-    <main class="container mx-auto p-4">
+    <main role="main" class="container mx-auto p-4">
         {% block content %}{% endblock %}
     </main>
+    <script>
+        console.clear(); // مسح console logs
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
